@@ -21,6 +21,7 @@ To use a library in your project, add the following line to your CMakeLists.txt 
 ```cmake
 list(APPEND CMAKE_PREFIX_PATH "../../external_install")
 find_package(box2d REQUIRED)
+target_link_libraries(box2d_minimalProject PRIVATE box2d::box2d)
 ```
 
 #### Rebuild existing libraries
@@ -29,11 +30,11 @@ find_package(box2d REQUIRED)
 cmake -DFORCE_REBUILD=TRUE -P download_all.cmake
 ```
 
-### List of libraries
+### List of CMake targets for each library
 
-- box2d
-- EnTT
-- imgui
-- nlohmann_json
-- SDL3
-- spdlog
+- box2d::box2d
+- EnTT::EnTT
+- imgui::imgui
+- nlohmann_json::nlohmann_json
+- SDL3::SDL3
+- spdlog::spdlog
