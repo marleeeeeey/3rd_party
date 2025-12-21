@@ -5,6 +5,10 @@ git checkout v3.1.1
 if exist build rmdir /s /q build
 if exist ..\box2d_installed rmdir /s /q ..\box2d_installed
 
-cmake -S . -B build -DCMAKE_INSTALL_PREFIX=../box2d_installed
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=../box2d_installed -DCMAKE_DEBUG_POSTFIX=d
+
 cmake --build build --config Release
-cmake --install build
+cmake --install build --config Release
+
+cmake --build build --config Debug
+cmake --install build --config Debug

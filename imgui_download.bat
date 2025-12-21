@@ -12,8 +12,12 @@ if exist ..\imgui_installed rmdir /s /q ..\imgui_installed
 
 copy ..\imgui_CMakeConfig.txt .\CMakeLists.txt
 
-cmake -S . -B build -DCMAKE_INSTALL_PREFIX=../imgui_installed
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=../imgui_installed -DCMAKE_DEBUG_POSTFIX=d
+
 cmake --build build --config Release
-cmake --install build
+cmake --install build --config Release
+
+cmake --build build --config Debug
+cmake --install build --config Debug
 
 del CMakeLists.txt
