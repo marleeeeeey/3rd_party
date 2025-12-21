@@ -3,7 +3,7 @@ project(imgui_minimalProject)
 
 set(CMAKE_CXX_STANDARD 17)
 
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../imgui_installed")
+list(APPEND CMAKE_PREFIX_PATH "../../external_install")
 
 find_package(imgui REQUIRED)
 
