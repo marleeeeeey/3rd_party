@@ -214,6 +214,8 @@ download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0
 # OpenAL is analog of SDL3_audio
 download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0")
 download_and_install_with_custom_cmakelists("implot" "https://github.com/epezent/implot.git" "v0.17" "implot_CMakeLists.txt")
+# Tracy client. It sends data to Tracy server called "tracy-profiler.exe".
+download_and_install("Tracy" "https://github.com/wolfpld/tracy.git" "v0.13.1")
 
 # --- End of Library List ---
 
