@@ -1,4 +1,5 @@
-# Global flag to control rebuild behavior.
+# --- Global flags ---
+
 # Set to TRUE if you want to wipe and rebuild everything.
 if (NOT DEFINED FORCE_REBUILD)
     set(FORCE_REBUILD FALSE)
@@ -8,6 +9,8 @@ endif ()
 if (NOT DEFINED REBUILD_EXAMPLE_PROJECTS)
     set(REBUILD_EXAMPLE_PROJECTS FALSE)
 endif ()
+
+# --- Helper Methods ---
 
 function(build_example_project LIB_NAME EXAMPLE_DIR EXAMPLE_BUILD_DIR)
     if (EXISTS "${EXAMPLE_DIR}/CMakeLists.txt")
@@ -186,7 +189,7 @@ endfunction()
 
 # --- MAIN ---
 
-# 1. Record the start time (in seconds)
+# Record the start time (in seconds)
 string(TIMESTAMP START_TIME "%s")
 
 # --- Library List ---
@@ -211,16 +214,15 @@ download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0
 # OpenAL is analog of SDL3_audio
 download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0")
 
-# 2. Record the end time and calculate the duration
-string(TIMESTAMP END_TIME "%s")
-math(EXPR DURATION "${END_TIME} - ${START_TIME}")
-
-# 3. Format seconds into minutes and seconds
-math(EXPR MINUTES "${DURATION} / 60")
-math(EXPR SECONDS "${DURATION} % 60")
+# --- End of Library List ---
 
 message(STATUS "download_all.cmake scripts completed with options:")
 message(STATUS "  FORCE_REBUILD=${FORCE_REBUILD}")
 message(STATUS "  REBUILD_EXAMPLE_PROJECTS=${REBUILD_EXAMPLE_PROJECTS}")
 
+# Total execution time
+string(TIMESTAMP END_TIME "%s")
+math(EXPR DURATION "${END_TIME} - ${START_TIME}")
+math(EXPR MINUTES "${DURATION} / 60")
+math(EXPR SECONDS "${DURATION} % 60")
 message(STATUS "Total execution time: ${MINUTES} min ${SECONDS} sec")
