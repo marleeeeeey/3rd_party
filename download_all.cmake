@@ -11,7 +11,7 @@ endif ()
 
 function(build_example_project LIB_NAME EXAMPLE_DIR EXAMPLE_BUILD_DIR)
     if (EXISTS "${EXAMPLE_DIR}/CMakeLists.txt")
-        message(STATUS "Running Smoke Test for ${LIB_NAME}...")
+        message(STATUS "Building example project ${LIB_NAME}...")
 
         file(REMOVE_RECURSE "${EXAMPLE_BUILD_DIR}")
 
@@ -31,9 +31,9 @@ function(build_example_project LIB_NAME EXAMPLE_DIR EXAMPLE_BUILD_DIR)
                 COMMAND_ERROR_IS_FATAL ANY
         )
 
-        message(STATUS "Smoke Test for ${LIB_NAME} PASSED.")
+        message(STATUS "Example project build for ${LIB_NAME} PASSED.")
     else ()
-        message(FATAL_ERROR "No smoke test found for ${LIB_NAME} (checked: ${EXAMPLE_DIR}/CMakeLists.txt)")
+        message(FATAL_ERROR "No example project found for ${LIB_NAME} (checked: ${EXAMPLE_DIR}/CMakeLists.txt)")
     endif ()
 endfunction()
 
@@ -208,6 +208,8 @@ download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v
         "-DMAGIC_ENUM_OPT_BUILD_TESTS=OFF"
 )
 download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0")
+# OpenAL is analog of SDL3_audio
+download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0")
 
 # 2. Record the end time and calculate the duration
 string(TIMESTAMP END_TIME "%s")
