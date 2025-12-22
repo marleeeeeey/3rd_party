@@ -1,15 +1,15 @@
 # Global flag to control rebuild behavior.
 # Set to TRUE if you want to wipe and rebuild everything.
-if(NOT DEFINED FORCE_REBUILD)
+if (NOT DEFINED FORCE_REBUILD)
     set(FORCE_REBUILD FALSE)
-endif()
+endif ()
 
 # If TRUE: do not run smoke tests for libraries that are already installed
-if(NOT DEFINED REBUILD_EXAMPLE_PROJECTS)
+if (NOT DEFINED REBUILD_EXAMPLE_PROJECTS)
     set(REBUILD_EXAMPLE_PROJECTS FALSE)
-endif()
+endif ()
 
-function(run_smoke_test LIB_NAME EXAMPLE_DIR EXAMPLE_BUILD_DIR)
+function(build_example_project LIB_NAME EXAMPLE_DIR EXAMPLE_BUILD_DIR)
     if (EXISTS "${EXAMPLE_DIR}/CMakeLists.txt")
         message(STATUS "Running Smoke Test for ${LIB_NAME}...")
 
@@ -45,23 +45,8 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
     set(EXAMPLE_DIR "${CMAKE_CURRENT_LIST_DIR}/examples/${LIB_NAME}")
     set(EXAMPLE_BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/external_build/examples/${LIB_NAME}")
 
-    # Check if the library is already installed
-    if (EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
-        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}")
-
-        # Optionally also skip smoke tests for installed libs
-        if(NOT REBUILD_EXAMPLE_PROJECTS)
-            return()
-        endif()
-
-        # Otherwise run smoke test even for installed libs
-        run_smoke_test("${LIB_NAME}" "${EXAMPLE_DIR}" "${EXAMPLE_BUILD_DIR}")
-        return()
-    endif ()
-
-    message(STATUS "Processing ${LIB_NAME} (${LIB_VERSION})")
-
-    # 1. Clone the repository into external_source
+    # 1. Clone the repository or detect VERSION_CHANGED
+    set(VERSION_CHANGED FALSE)
     if (NOT EXISTS "${SOURCE_DIR}")
         # Create external_source directory if it doesn't exist
         file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source")
@@ -71,43 +56,100 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
                 WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source"
                 COMMAND_ERROR_IS_FATAL ANY
         )
+    else ()
+        # Check if source code already on the correct version - VERSION_CHANGED
+        execute_process(
+                COMMAND git rev-parse HEAD
+                WORKING_DIRECTORY "${SOURCE_DIR}"
+                OUTPUT_VARIABLE CURRENT_COMMIT_HASH
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        execute_process(
+                COMMAND git rev-parse "${LIB_VERSION}^{commit}"
+                WORKING_DIRECTORY "${SOURCE_DIR}"
+                OUTPUT_VARIABLE TARGET_COMMIT_HASH
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+        )
+
+        if (NOT "${CURRENT_COMMIT_HASH}" STREQUAL "${TARGET_COMMIT_HASH}")
+            set(VERSION_CHANGED TRUE)
+        endif()
     endif ()
 
-    # 2. Checkout the specified version/tag
-    execute_process(
-            COMMAND git checkout "${LIB_VERSION}"
-            WORKING_DIRECTORY "${SOURCE_DIR}"
-            COMMAND_ERROR_IS_FATAL ANY
-    )
 
-    # 3. Clean
+    # 2. Check if the library is already installed
+    if (NOT VERSION_CHANGED AND EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
+        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}. URL: ${LIB_URL}")
+
+        if (REBUILD_EXAMPLE_PROJECTS)
+            build_example_project("${LIB_NAME}" "${EXAMPLE_DIR}" "${EXAMPLE_BUILD_DIR}")
+        endif ()
+
+        return()
+    endif ()
+
+    message(STATUS "Processing ${LIB_NAME} (${LIB_VERSION})")
+
+    # 3. Checkout to specific commit if needed
+    if (VERSION_CHANGED)
+        message(STATUS "Version mismatch for ${LIB_NAME}: switching from ${CURRENT_COMMIT_HASH} to ${TARGET_COMMIT_HASH} (${LIB_VERSION})")
+
+        # Fetch in case the tag/branch is new
+        execute_process(
+                COMMAND git fetch --all --tags
+                WORKING_DIRECTORY "${SOURCE_DIR}"
+                COMMAND_ERROR_IS_FATAL ANY
+        )
+
+        # Force discard any local changes
+        execute_process(
+                COMMAND git reset --hard
+                WORKING_DIRECTORY "${SOURCE_DIR}"
+                COMMAND_ERROR_IS_FATAL ANY
+        )
+
+        execute_process(
+                COMMAND git checkout "${TARGET_COMMIT_HASH}"
+                WORKING_DIRECTORY "${SOURCE_DIR}"
+                COMMAND_ERROR_IS_FATAL ANY
+        )
+
+        # Update submodules after checkout
+        execute_process(
+                COMMAND git submodule update --init --recursive
+                WORKING_DIRECTORY "${SOURCE_DIR}"
+                COMMAND_ERROR_IS_FATAL ANY
+        )
+    endif ()
+
+    # 4. Clean
     file(REMOVE_RECURSE "${BUILD_DIR}")
     file(REMOVE_RECURSE "${INSTALL_DIR}")
 
-    # 4. Configure
-    # Note: Removed quotes from the value part of -D flags because CMake handles them
+    # 5. Configure
     execute_process(
             COMMAND ${CMAKE_COMMAND} -S "${SOURCE_DIR}" -B "${BUILD_DIR}"
             "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
-            # Add our central install directory to the prefix path so dependencies can be found
             "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_LIST_DIR}/external_install"
-            -DCMAKE_DEBUG_POSTFIX=d
+            "-DCMAKE_DEBUG_POSTFIX=d"
             ${ARGN}
             COMMAND_ERROR_IS_FATAL ANY
     )
 
-    # 5. Build and Install Release
+    # 6. Build and Install Release
     message(STATUS "Installing ${LIB_NAME} [Release]...")
     execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
     execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
 
-    # 6. Build and Install Debug
+    # 7. Build and Install Debug
     message(STATUS "Installing ${LIB_NAME} [Debug]...")
     execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Debug COMMAND_ERROR_IS_FATAL ANY)
     execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Debug COMMAND_ERROR_IS_FATAL ANY)
 
-    # 7. Smoke Test: Build the example project
-    run_smoke_test("${LIB_NAME}" "${EXAMPLE_DIR}" "${EXAMPLE_BUILD_DIR}")
+    # 8. Smoke Test: Build the example project
+    build_example_project("${LIB_NAME}" "${EXAMPLE_DIR}" "${EXAMPLE_BUILD_DIR}")
 
     message(STATUS "Finished ${LIB_NAME}")
 endfunction()
@@ -153,6 +195,10 @@ download_and_install("box2d" "https://github.com/erincatto/box2d.git" "v3.1.1")
 download_and_install("EnTT" "https://github.com/skypjack/entt.git" "v3.16.0" "-DENTT_INSTALL=ON")
 download_and_install("nlohmann_json" "https://github.com/nlohmann/json.git" "v3.12.0" "-DJSON_BuildTests=OFF")
 download_and_install("SDL3" "https://github.com/libsdl-org/SDL.git" "release-3.2.28")
+# SDL3_image requires SDL3 to be installed first
+download_and_install("SDL3_image" "https://github.com/libsdl-org/SDL_image.git" "release-3.2.4"
+        "-DSDLIMAGE_AVIF=OFF" # fix error: No CMAKE_ASM_NASM_COMPILER could be found
+)
 # ImGui requires SDL3 to be installed first
 download_and_install_with_custom_cmakelists("imgui" "https://github.com/ocornut/imgui.git" "v1.92.5" "imgui_CMakeLists.txt")
 download_and_install("spdlog" "https://github.com/gabime/spdlog.git" "v1.16.0")
@@ -162,9 +208,6 @@ download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v
         "-DMAGIC_ENUM_OPT_BUILD_TESTS=OFF"
 )
 download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0")
-download_and_install("SDL3_image" "https://github.com/libsdl-org/SDL_image.git" "release-3.2.4"
-        "-DSDLIMAGE_AVIF=OFF" # fix error: No CMAKE_ASM_NASM_COMPILER could be found
-)
 
 # 2. Record the end time and calculate the duration
 string(TIMESTAMP END_TIME "%s")
