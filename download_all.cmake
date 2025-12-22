@@ -43,11 +43,10 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
 
     # Check if the library is already installed
     if (EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
-        message(STATUS "--- Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR} ---")
+        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}")
 
         # Optionally also skip smoke tests for installed libs
         if(SKIP_SMOKE_TESTS_FOR_INSTALLED)
-            message(STATUS "Skipping Smoke Test for ${LIB_NAME} (already installed).")
             return()
         endif()
 
@@ -56,7 +55,7 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
         return()
     endif ()
 
-    message(STATUS "--- Processing ${LIB_NAME} (${LIB_VERSION}) ---")
+    message(STATUS "Processing ${LIB_NAME} (${LIB_VERSION})")
 
     # 1. Clone the repository into external_source
     if (NOT EXISTS "${SOURCE_DIR}")
@@ -104,12 +103,19 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
     # 7. Smoke Test: Build the example project
     run_smoke_test("${LIB_NAME}" "${EXAMPLE_DIR}" "${EXAMPLE_BUILD_DIR}")
 
-    message(STATUS "--- Finished ${LIB_NAME} ---")
+    message(STATUS "Finished ${LIB_NAME}")
 endfunction()
 
-# --- Function for libraries without built-in CMake (like ImGui) ---
+# Function for libraries without built-in CMake (like ImGui)
 function(download_and_install_with_custom_cmakelists LIB_NAME LIB_URL LIB_VERSION CUSTOM_CMAKE_FILE)
     set(SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/external_source/${LIB_NAME}")
+    set(INSTALL_DIR "${CMAKE_CURRENT_LIST_DIR}/external_install/${LIB_NAME}")
+
+    # Check if the library is already installed
+    if (EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
+        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}")
+        return()
+    endif ()
 
     # First, make sure we have the source code
     if (NOT EXISTS "${SOURCE_DIR}")
@@ -147,6 +153,7 @@ download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v
         "-DMAGIC_ENUM_OPT_BUILD_EXAMPLES=OFF"
         "-DMAGIC_ENUM_OPT_BUILD_TESTS=OFF"
 )
+download_and_install("googletest" "https://github.com/google/googletest.git" "v1.17.0")
 
 # ImGui (requires SDL3 to be installed first)
 # ImGui still needs special handling as it doesn't have its own CMakeLists.txt in the repo
@@ -163,6 +170,10 @@ math(EXPR DURATION "${END_TIME} - ${START_TIME}")
 # 3. Format seconds into minutes and seconds
 math(EXPR MINUTES "${DURATION} / 60")
 math(EXPR SECONDS "${DURATION} % 60")
+
+if(SKIP_SMOKE_TESTS_FOR_INSTALLED)
+    message(NOTICE "Smoke tests were skipped for libraries that were already installed (SKIP_SMOKE_TESTS_FOR_INSTALLED=ON).")
+endif()
 
 message(STATUS "--------------------------------------------------")
 message(STATUS "Total execution time: ${MINUTES} min ${SECONDS} sec")
