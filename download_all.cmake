@@ -153,7 +153,7 @@ download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v
         "-DMAGIC_ENUM_OPT_BUILD_EXAMPLES=OFF"
         "-DMAGIC_ENUM_OPT_BUILD_TESTS=OFF"
 )
-download_and_install("googletest" "https://github.com/google/googletest.git" "v1.17.0")
+download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0")
 
 # ImGui (requires SDL3 to be installed first)
 # ImGui still needs special handling as it doesn't have its own CMakeLists.txt in the repo
@@ -172,9 +172,7 @@ math(EXPR MINUTES "${DURATION} / 60")
 math(EXPR SECONDS "${DURATION} % 60")
 
 if(SKIP_SMOKE_TESTS_FOR_INSTALLED)
-    message(NOTICE "Smoke tests were skipped for libraries that were already installed (SKIP_SMOKE_TESTS_FOR_INSTALLED=ON).")
+    message(STATUS "Smoke tests were skipped for libraries that were already installed (SKIP_SMOKE_TESTS_FOR_INSTALLED=ON).")
 endif()
 
-message(STATUS "--------------------------------------------------")
 message(STATUS "Total execution time: ${MINUTES} min ${SECONDS} sec")
-message(STATUS "--------------------------------------------------")

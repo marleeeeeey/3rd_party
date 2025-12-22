@@ -30,11 +30,14 @@ target_link_libraries(box2d_minimalProject PRIVATE box2d::box2d)
 cmake -DFORCE_REBUILD=TRUE -P download_all.cmake
 ```
 
-### List of CMake targets for each library
+### List of CMake packages
 
-- box2d::box2d
-- EnTT::EnTT
-- imgui::imgui
-- nlohmann_json::nlohmann_json
-- SDL3::SDL3
-- spdlog::spdlog
+- box2d
+- EnTT
+- glm
+- GTest
+- imgui
+- magic_enum
+- nlohmann_json
+- SDL3
+- spdlog
