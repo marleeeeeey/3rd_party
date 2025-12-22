@@ -1,9 +1,13 @@
 # Global flag to control rebuild behavior.
 # Set to TRUE if you want to wipe and rebuild everything.
-set(FORCE_REBUILD FALSE)
+if(NOT DEFINED FORCE_REBUILD)
+    set(FORCE_REBUILD FALSE)
+endif()
 
 # If TRUE: do not run smoke tests for libraries that are already installed
-set(SKIP_SMOKE_TESTS_FOR_INSTALLED TRUE)
+if(NOT DEFINED REBUILD_EXAMPLE_PROJECTS)
+    set(REBUILD_EXAMPLE_PROJECTS FALSE)
+endif()
 
 function(run_smoke_test LIB_NAME EXAMPLE_DIR EXAMPLE_BUILD_DIR)
     if (EXISTS "${EXAMPLE_DIR}/CMakeLists.txt")
@@ -46,7 +50,7 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
         message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}")
 
         # Optionally also skip smoke tests for installed libs
-        if(SKIP_SMOKE_TESTS_FOR_INSTALLED)
+        if(NOT REBUILD_EXAMPLE_PROJECTS)
             return()
         endif()
 
@@ -63,7 +67,7 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
         file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source")
 
         execute_process(
-                COMMAND git clone "${LIB_URL}" "${LIB_NAME}"
+                COMMAND git clone --recursive "${LIB_URL}" "${LIB_NAME}"
                 WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source"
                 COMMAND_ERROR_IS_FATAL ANY
         )
@@ -85,6 +89,8 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
     execute_process(
             COMMAND ${CMAKE_COMMAND} -S "${SOURCE_DIR}" -B "${BUILD_DIR}"
             "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
+            # Add our central install directory to the prefix path so dependencies can be found
+            "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_LIST_DIR}/external_install"
             -DCMAKE_DEBUG_POSTFIX=d
             ${ARGN}
             COMMAND_ERROR_IS_FATAL ANY
@@ -147,6 +153,8 @@ download_and_install("box2d" "https://github.com/erincatto/box2d.git" "v3.1.1")
 download_and_install("EnTT" "https://github.com/skypjack/entt.git" "v3.16.0" "-DENTT_INSTALL=ON")
 download_and_install("nlohmann_json" "https://github.com/nlohmann/json.git" "v3.12.0" "-DJSON_BuildTests=OFF")
 download_and_install("SDL3" "https://github.com/libsdl-org/SDL.git" "release-3.2.28")
+# ImGui requires SDL3 to be installed first
+download_and_install_with_custom_cmakelists("imgui" "https://github.com/ocornut/imgui.git" "v1.92.5" "imgui_CMakeLists.txt")
 download_and_install("spdlog" "https://github.com/gabime/spdlog.git" "v1.16.0")
 download_and_install("glm" "https://github.com/g-truc/glm.git" "1.0.2")
 download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v0.9.7"
@@ -154,14 +162,9 @@ download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v
         "-DMAGIC_ENUM_OPT_BUILD_TESTS=OFF"
 )
 download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0")
-
-# ImGui (requires SDL3 to be installed first)
-# ImGui still needs special handling as it doesn't have its own CMakeLists.txt in the repo
-if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/external_install/SDL3")
-    download_and_install_with_custom_cmakelists("imgui" "https://github.com/ocornut/imgui.git" "v1.92.5" "imgui_CMakeConfig.txt")
-else ()
-    message(FATAL_ERROR "SDL3 installation not found at ${CMAKE_CURRENT_LIST_DIR}/external_install/SDL3. Please ensure SDL3 is listed before ImGui or already installed.")
-endif ()
+download_and_install("SDL3_image" "https://github.com/libsdl-org/SDL_image.git" "release-3.2.4"
+        "-DSDLIMAGE_AVIF=OFF" # fix error: No CMAKE_ASM_NASM_COMPILER could be found
+)
 
 # 2. Record the end time and calculate the duration
 string(TIMESTAMP END_TIME "%s")
@@ -171,8 +174,8 @@ math(EXPR DURATION "${END_TIME} - ${START_TIME}")
 math(EXPR MINUTES "${DURATION} / 60")
 math(EXPR SECONDS "${DURATION} % 60")
 
-if(SKIP_SMOKE_TESTS_FOR_INSTALLED)
-    message(STATUS "Smoke tests were skipped for libraries that were already installed (SKIP_SMOKE_TESTS_FOR_INSTALLED=ON).")
-endif()
+message(STATUS "download_all.cmake scripts completed with options:")
+message(STATUS "  FORCE_REBUILD=${FORCE_REBUILD}")
+message(STATUS "  REBUILD_EXAMPLE_PROJECTS=${REBUILD_EXAMPLE_PROJECTS}")
 
 message(STATUS "Total execution time: ${MINUTES} min ${SECONDS} sec")
