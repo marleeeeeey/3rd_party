@@ -41,7 +41,10 @@ target_link_libraries(box2d_minimalProject PRIVATE box2d::box2d)
 - glm
 - GTest
 - imgui
+- implot
 - magic_enum
 - nlohmann_json
+- OpenAL
 - SDL3
+- SDL3_image
 - spdlog

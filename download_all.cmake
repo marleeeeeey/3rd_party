@@ -213,6 +213,7 @@ download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v
 download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0")
 # OpenAL is analog of SDL3_audio
 download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0")
+download_and_install_with_custom_cmakelists("implot" "https://github.com/epezent/implot.git" "v0.17" "implot_CMakeLists.txt")
 
 # --- End of Library List ---
 
