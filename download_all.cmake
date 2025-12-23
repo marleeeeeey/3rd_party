@@ -218,6 +218,7 @@ download_and_install_with_custom_cmakelists("implot" "https://github.com/epezent
 download_and_install("Tracy" "https://github.com/wolfpld/tracy.git" "v0.13.1")
 download_and_install("miniaudio" "https://github.com/mackron/miniaudio.git" "0.11.23")
 download_and_install_with_custom_cmakelists("enet" "https://github.com/lsalzman/enet.git" "v1.3.18" "enet_CMakeLists.txt")
+download_and_install_with_custom_cmakelists("asio" "https://github.com/chriskohlhoff/asio.git" "asio-1-36-0" "asio_CMakeLists.txt")
 
 # --- End of Library List ---
 
