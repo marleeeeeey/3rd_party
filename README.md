@@ -18,10 +18,10 @@ Rebuild existing libraries
 cmake -DFORCE_REBUILD=TRUE -P download_all.cmake
 ```
 
-Rebuild all examples even if they were already built
+Skip examples building during libraries building
 
 ```shell
-cmake -DREBUILD_EXAMPLE_PROJECTS=TRUE -P download_all.cmake
+cmake -DSKIP_EXAMPLES_BUILDING=TRUE -P download_all.cmake
 ```
 
 ### How to use libraries in your project

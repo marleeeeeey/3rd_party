@@ -6,39 +6,38 @@ if (NOT DEFINED FORCE_REBUILD)
 endif ()
 
 # If TRUE: do not run smoke tests for libraries that are already installed
-if (NOT DEFINED REBUILD_EXAMPLE_PROJECTS)
-    set(REBUILD_EXAMPLE_PROJECTS FALSE)
+if (NOT DEFINED SKIP_EXAMPLES_BUILDING)
+    set(SKIP_EXAMPLES_BUILDING FALSE)
 endif ()
 
 # --- Helper Methods ---
 
-function(build_example_project LIB_NAME EXAMPLE_DIR EXAMPLE_BUILD_DIR)
-    if (EXISTS "${EXAMPLE_DIR}/CMakeLists.txt")
-        message(STATUS "Building example project ${LIB_NAME}...")
+function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR)
+    message(STATUS "--- Incremental build for ${PROJECT_NAME} ---")
 
-        file(REMOVE_RECURSE "${EXAMPLE_BUILD_DIR}")
+    # 1. Configuration (Generation)
+    # CMake handles existing directories and only updates what's necessary.
+    execute_process(
+            COMMAND ${CMAKE_COMMAND} -S "${PROJECT_SOURCE_DIR}" -B "${PROJECT_BUILD_DIR}"
+            "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_LIST_DIR}/external_install"
+            COMMAND_ERROR_IS_FATAL ANY
+    )
 
-        execute_process(
-                COMMAND ${CMAKE_COMMAND} -S "${EXAMPLE_DIR}" -B "${EXAMPLE_BUILD_DIR}"
-                "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_LIST_DIR}/external_install"
-                COMMAND_ERROR_IS_FATAL ANY
-        )
+    # 2. Build Release configuration
+    execute_process(
+            COMMAND ${CMAKE_COMMAND} --build "${PROJECT_BUILD_DIR}" --config Release
+            COMMAND_ERROR_IS_FATAL ANY
+    )
 
-        execute_process(
-                COMMAND ${CMAKE_COMMAND} --build "${EXAMPLE_BUILD_DIR}" --config Release
-                COMMAND_ERROR_IS_FATAL ANY
-        )
+    # 3. Build Debug configuration
+    execute_process(
+            COMMAND ${CMAKE_COMMAND} --build "${PROJECT_BUILD_DIR}" --config Debug
+            COMMAND_ERROR_IS_FATAL ANY
+    )
 
-        execute_process(
-                COMMAND ${CMAKE_COMMAND} --build "${EXAMPLE_BUILD_DIR}" --config Debug
-                COMMAND_ERROR_IS_FATAL ANY
-        )
-
-        message(STATUS "Example project build for ${LIB_NAME} PASSED.")
-    else ()
-        message(FATAL_ERROR "No example project found for ${LIB_NAME} (checked: ${EXAMPLE_DIR}/CMakeLists.txt)")
-    endif ()
+    message(STATUS "Project build ${PROJECT_NAME} PASSED.")
 endfunction()
+
 
 # Universal function to download, build, and install a library
 function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
@@ -78,18 +77,13 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
 
         if (NOT "${CURRENT_COMMIT_HASH}" STREQUAL "${TARGET_COMMIT_HASH}")
             set(VERSION_CHANGED TRUE)
-        endif()
+        endif ()
     endif ()
 
 
     # 2. Check if the library is already installed
     if (NOT VERSION_CHANGED AND EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
         message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}. URL: ${LIB_URL}")
-
-        if (REBUILD_EXAMPLE_PROJECTS)
-            build_example_project("${LIB_NAME}" "${EXAMPLE_DIR}" "${EXAMPLE_BUILD_DIR}")
-        endif ()
-
         return()
     endif ()
 
@@ -151,9 +145,6 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
     execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Debug COMMAND_ERROR_IS_FATAL ANY)
     execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Debug COMMAND_ERROR_IS_FATAL ANY)
 
-    # 8. Smoke Test: Build the example project
-    build_example_project("${LIB_NAME}" "${EXAMPLE_DIR}" "${EXAMPLE_BUILD_DIR}")
-
     message(STATUS "Finished ${LIB_NAME}")
 endfunction()
 
@@ -187,10 +178,12 @@ function(download_and_install_with_custom_cmakelists LIB_NAME LIB_URL LIB_VERSIO
     file(REMOVE "${SOURCE_DIR}/CMakeLists.txt")
 endfunction()
 
+
 # --- MAIN ---
 
 # Record the start time (in seconds)
 string(TIMESTAMP START_TIME "%s")
+
 
 # --- Library List ---
 
@@ -220,11 +213,18 @@ download_and_install("miniaudio" "https://github.com/mackron/miniaudio.git" "0.1
 download_and_install_with_custom_cmakelists("enet" "https://github.com/lsalzman/enet.git" "v1.3.18" "enet_CMakeLists.txt")
 download_and_install_with_custom_cmakelists("asio" "https://github.com/chriskohlhoff/asio.git" "asio-1-36-0" "asio_CMakeLists.txt")
 
-# --- End of Library List ---
+
+# --- Smoke Test: Build all examples ---
+if (NOT SKIP_EXAMPLES_BUILDING)
+    set(EXAMPLES_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/examples")
+    set(EXAMPLES_BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/external_build/examples")
+    build_cmake_project("examples" "${EXAMPLES_SOURCE_DIR}" "${EXAMPLES_BUILD_DIR}")
+endif ()
 
 message(STATUS "download_all.cmake scripts completed with options:")
 message(STATUS "  FORCE_REBUILD=${FORCE_REBUILD}")
-message(STATUS "  REBUILD_EXAMPLE_PROJECTS=${REBUILD_EXAMPLE_PROJECTS}")
+message(STATUS "  SKIP_EXAMPLES_BUILDING=${SKIP_EXAMPLES_BUILDING}")
+
 
 # Total execution time
 string(TIMESTAMP END_TIME "%s")
