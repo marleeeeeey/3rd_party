@@ -4,12 +4,12 @@
 using json = nlohmann::json;
 
 int main() {
-    json j;
-    j["project"] = "nlohmann_json_minimalProject";
-    j["status"] = "working";
-    j["pi"] = 3.141;
+  json j;
+  j["project"] = "nlohmann_json_minimalProject";
+  j["status"] = "working";
+  j["pi"] = 3.141;
 
-    std::cout << j.dump(4) << std::endl;
+  std::cout << j.dump(4) << std::endl;
 
-    return 0;
+  return 0;
 }

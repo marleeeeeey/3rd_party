@@ -1,30 +1,30 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using ::testing::Return;
 
 struct IService {
-    virtual ~IService() = default;
-    virtual int GetValue() = 0;
+  virtual ~IService() = default;
+  virtual int GetValue() = 0;
 };
 
 struct MockService : IService {
-    MOCK_METHOD(int, GetValue, (), (override));
+  MOCK_METHOD(int, GetValue, (), (override));
 };
 
 TEST(SmokeTest, BasicAssertions) {
-    EXPECT_EQ(1 + 1, 2);
-    EXPECT_TRUE(true);
+  EXPECT_EQ(1 + 1, 2);
+  EXPECT_TRUE(true);
 }
 
 TEST(SmokeTest, GMockWorks) {
-    MockService mock;
-    EXPECT_CALL(mock, GetValue()).WillOnce(Return(123));
+  MockService mock;
+  EXPECT_CALL(mock, GetValue()).WillOnce(Return(123));
 
-    EXPECT_EQ(mock.GetValue(), 123);
+  EXPECT_EQ(mock.GetValue(), 123);
 }
 
 int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
