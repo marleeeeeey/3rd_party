@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(examples)
+project(3rd_party_examples)
 
 add_subdirectory(asio)
 add_subdirectory(box2d)
