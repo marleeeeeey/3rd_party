@@ -23,7 +23,7 @@ function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
     get_filename_component(FILE_NAME ${SCHEMA_PATH} NAME_WE)
 
     # Use binary directory to keep source tree clean
-    set(FB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated_fb")
+    set(FB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/fb_gen")
     set(GENERATED_HEADER "${FB_GEN_DIR}/${FILE_NAME}_generated.h")
 
     # Ensure the generation directory exists
@@ -34,12 +34,18 @@ function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
             OUTPUT "${GENERATED_HEADER}"
             COMMAND ${FLATC_EXECUTABLE} --cpp -o "${FB_GEN_DIR}" "${SCHEMA_PATH}"
             DEPENDS "${SCHEMA_PATH}"
-            COMMENT "Compiling FlatBuffers schema: ${SCHEMA_PATH}"
+            COMMENT "Compiling FlatBuffers schema: ${SCHEMA_PATH} to ${GENERATED_HEADER}"
             VERBATIM
     )
 
+    # HACK. Part1. add_custom_target is a real thing that Ninja can't ignore.
+    add_custom_target(${TARGET_NAME}_gen_task DEPENDS "${GENERATED_HEADER}")
+
     # Create the interface library
     add_library(${TARGET_NAME} INTERFACE)
+
+    # # HACK. Part2. Make the interface library depend on the real target
+    add_dependencies(${TARGET_NAME} ${TARGET_NAME}_gen_task)
 
     # Add the generated header as a source so CMake tracks dependencies
     target_sources(${TARGET_NAME} INTERFACE "${GENERATED_HEADER}")
