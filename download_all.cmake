@@ -135,15 +135,15 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
             COMMAND_ERROR_IS_FATAL ANY
     )
 
-    # 6. Build and Install Release
-    message(STATUS "Installing ${LIB_NAME} [Release]...")
-    execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
-    execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
-
-    # 7. Build and Install Debug
+    # 6. Build and Install Debug
     message(STATUS "Installing ${LIB_NAME} [Debug]...")
     execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Debug COMMAND_ERROR_IS_FATAL ANY)
     execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Debug COMMAND_ERROR_IS_FATAL ANY)
+
+    # 7. Build and Install Release
+    message(STATUS "Installing ${LIB_NAME} [Release]...")
+    execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
+    execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
 
     message(STATUS "Finished ${LIB_NAME}")
 endfunction()
@@ -212,6 +212,7 @@ download_and_install("Tracy" "https://github.com/wolfpld/tracy.git" "v0.13.1")
 download_and_install("miniaudio" "https://github.com/mackron/miniaudio.git" "0.11.23")
 download_and_install_with_custom_cmakelists("enet" "https://github.com/lsalzman/enet.git" "v1.3.18" "enet_CMakeLists.txt")
 download_and_install_with_custom_cmakelists("asio" "https://github.com/chriskohlhoff/asio.git" "asio-1-36-0" "asio_CMakeLists.txt")
+download_and_install("flatbuffers" "https://github.com/google/flatbuffers.git" "v25.12.19")
 
 
 # --- Smoke Test: Build all examples ---
