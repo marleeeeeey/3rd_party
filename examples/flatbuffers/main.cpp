@@ -71,6 +71,32 @@ int main(int /*argc*/, const char* /*argv*/[]) {
 
   // ** file/network code goes here :) **
   // access builder.GetBufferPointer() for builder.GetSize() bytes
+  //
+  // Pseudo-code for asio library
+  //
+  /*
+
+    // server side
+
+    uint8_t* buf = builder.GetBufferPointer();
+    uint32_t size = static_cast<uint32_t>(builder.GetSize());
+
+    std::vector<asio::const_buffer> buffers;
+    buffers.push_back(asio::buffer(&size, sizeof(size))); // 1. send size first
+    buffers.push_back(asio::buffer(buf, size));           // 2. send payload
+    asio::write(socket, buffers);
+
+    // ***************************************************
+
+    // client side
+
+    uint32_t size = 0;
+    asio::read(socket, asio::buffer(&size, sizeof(size)));      // 1. read size first
+    std::vector<uint8_t> read_buf(size);
+    asio::read(socket, asio::buffer(read_buf));                 // 2. read payload
+    auto monster = MyGame::Sample::GetMonster(read_buf.data()); // 3. use FlatBuffers to parse
+
+  */
 
   // Instead, we're going to access it right away (as if we just received it).
 
