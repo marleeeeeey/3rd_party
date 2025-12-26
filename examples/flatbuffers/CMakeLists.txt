@@ -10,7 +10,9 @@ find_package(flatbuffers REQUIRED)
 include("../../FlatbuffersHelper.cmake")
 
 # This creates a target 'monster_schema' that you can link to anywhere
-add_flatbuffers_schema(monster_schema "${CMAKE_CURRENT_SOURCE_DIR}/monster.fbs")
+add_flatbuffers_schema(monster_schema
+        monster.fbs
+)
 
 add_executable(flatbuffers_minimalProject
         main.cpp

@@ -8,11 +8,16 @@ if (NOT FLATC_EXECUTABLE)
 endif ()
 
 # Function to compile FlatBuffers schema and create a logical target
-# @param TARGET_NAME  Name of the library to create (e.g., monster_schema)
-# @param SCHEMA_PATH  Full path to the .fbs schema file
+# @param TARGET_NAME  Name of the library to create
+# @param SCHEMA_PATH  Path to the .fbs schema file (can be relative to current CMakeLists.txt)
 function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
-    if (NOT FLATC_EXECUTABLE)
-        message(FATAL_ERROR "flatc compiler not found! Cannot generate schema for ${TARGET_NAME}")
+    # Convert relative path to absolute relative to the calling CMakeLists.txt
+    if (NOT IS_ABSOLUTE "${SCHEMA_PATH}")
+        set(SCHEMA_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${SCHEMA_PATH}")
+    endif ()
+
+    if (NOT EXISTS "${SCHEMA_PATH}")
+        message(FATAL_ERROR "FlatBuffers schema not found: ${SCHEMA_PATH}")
     endif ()
 
     get_filename_component(FILE_NAME ${SCHEMA_PATH} NAME_WE)
