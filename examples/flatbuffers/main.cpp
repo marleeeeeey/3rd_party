@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "flatbuffers_gen/monster_generated.h"  // Already includes "flatbuffers/flatbuffers.h".
+#include "monster_generated.h"  // Already includes "flatbuffers/flatbuffers.h".
 
 using namespace MyGame::Sample;
 
