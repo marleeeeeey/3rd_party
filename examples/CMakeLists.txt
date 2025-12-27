@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(3rd_party_examples)
 
 add_subdirectory(asio)
+add_subdirectory(asio_and_flatbuffers)
 add_subdirectory(box2d)
 add_subdirectory(enet)
 add_subdirectory(EnTT)
