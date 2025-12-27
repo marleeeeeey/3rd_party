@@ -2,7 +2,8 @@
 #include <iostream>
 #include <thread>
 
-#include "solder_generated.h"  // Already includes "flatbuffers/flatbuffers.h".
+#include "../NetworkMethods.h"
+#include "../Serialization.h"
 
 using asio::ip::tcp;
 
@@ -13,15 +14,16 @@ int main() {
     tcp::resolver resolver(io_context);
     asio::connect(socket, resolver.resolve("127.0.0.1", "12345"));
 
-    std::cout << "Connected to server. Type messages:\n";
+    std::cout << "Connected to server. Enter monster name: " << std::endl;
 
     std::thread reader([&socket]() {
       try {
         char reply[1024];
-        for (;;) {
+        while (true) {
           std::error_code ec;
           size_t length = socket.read_some(asio::buffer(reply), ec);
-          if (ec) break;
+          if (ec)
+            break;
           std::cout << "Server: " << std::string(reply, length) << std::endl;
         }
       } catch (...) {
@@ -30,7 +32,8 @@ int main() {
 
     std::string line;
     while (std::getline(std::cin, line)) {
-      asio::write(socket, asio::buffer(line));
+      auto builder = createMonster(line);
+      sendMonsterData(socket, builder);
     }
 
     reader.join();

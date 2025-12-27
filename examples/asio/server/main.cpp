@@ -4,18 +4,18 @@
 
 using asio::ip::tcp;
 
-void session(std::shared_ptr<tcp::socket> sock) {
+void session(std::shared_ptr<tcp::socket> clientSocketPrt) {
   try {
     char data[1024];
     for (;;) {
       std::error_code ec;
-      size_t length = sock->read_some(asio::buffer(data), ec);
+      size_t length = clientSocketPrt->read_some(asio::buffer(data), ec);
       if (ec == asio::error::eof)
         break;
       else if (ec)
         throw asio::system_error(ec);
 
-      asio::write(*sock, asio::buffer(data, length));
+      asio::write(*clientSocketPrt, asio::buffer(data, length));
     }
   } catch (std::exception& e) {
     std::cerr << "Session error: " << e.what() << std::endl;
