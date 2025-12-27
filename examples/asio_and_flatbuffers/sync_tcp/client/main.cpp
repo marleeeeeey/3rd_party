@@ -32,8 +32,8 @@ int main() {
 
     std::string line;
     while (std::getline(std::cin, line)) {
-      auto builder = createMonster(line);
-      sendMonsterData(socket, builder);
+      flatbuffers::FlatBufferBuilder builder = createMonster(line);
+      sendSizeAndData(socket, asio::buffer(builder.GetBufferPointer(), builder.GetSize()));
     }
 
     reader.join();

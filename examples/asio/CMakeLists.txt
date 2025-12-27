@@ -7,5 +7,4 @@ list(APPEND CMAKE_PREFIX_PATH "../../external_install")
 
 find_package(asio REQUIRED)
 
-add_subdirectory(server)
-add_subdirectory(client)
+add_subdirectory(sync_tcp)

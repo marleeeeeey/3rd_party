@@ -16,7 +16,7 @@ void session(std::shared_ptr<tcp::socket> clientSocketPrt) {
   try {
     while (true) {
       // Read monster data from the client
-      auto monsterData = readMonsterData(clientSocketPrt);
+      std::vector<uint8_t> monsterData = readSizeAndData(clientSocketPrt);
       if (monsterData.empty())
         break;
 
