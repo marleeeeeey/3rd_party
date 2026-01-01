@@ -213,6 +213,7 @@ download_and_install("miniaudio" "https://github.com/mackron/miniaudio.git" "0.1
 download_and_install_with_custom_cmakelists("enet" "https://github.com/lsalzman/enet.git" "v1.3.18" "enet_CMakeLists.txt")
 download_and_install_with_custom_cmakelists("asio" "https://github.com/chriskohlhoff/asio.git" "asio-1-36-0" "asio_CMakeLists.txt")
 download_and_install("flatbuffers" "https://github.com/google/flatbuffers.git" "v25.12.19")
+download_and_install("cxxopts" "https://github.com/jarro2783/cxxopts.git" "v3.3.1")
 
 
 # --- Smoke Test: Build all examples ---
