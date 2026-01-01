@@ -17,12 +17,12 @@ if (WIN32)
 
     # HACK to determine DLL name.
     # based on the documentation from here: https://cmake.org/cmake/help/latest/module/FindOpenAL.html
-    message(STATUS "OPENAL_LIBRARY: ${OPENAL_LIBRARY}") # C:/dev/3rd_party/external_install/OpenAL/lib/OpenAL32.lib
+    #    message(STATUS "OPENAL_LIBRARY: ${OPENAL_LIBRARY}") # C:/dev/3rd_party/external_install/OpenAL/lib/OpenAL32.lib
     string(REPLACE "/lib/" "/bin/" OPENAL_BIN_PATH "${OPENAL_LIBRARY}")
     get_filename_component(OPENAL_BIN_DIR "${OPENAL_BIN_PATH}" DIRECTORY)
-    message(STATUS "OPENAL_BIN_DIR: ${OPENAL_BIN_DIR}") # C:/dev/3rd_party/external_install/OpenAL/bin
+    #    message(STATUS "OPENAL_BIN_DIR: ${OPENAL_BIN_DIR}") # C:/dev/3rd_party/external_install/OpenAL/bin
     set(OPENAL_DLL_PATH "${OPENAL_BIN_DIR}/OpenAL32.dll") # TODO: it always copied release DLL
-    message(STATUS "OPENAL_DLL_PATH: ${OPENAL_DLL_PATH}") # C:/dev/3rd_party/external_install/OpenAL/bin/OpenAL32.dll
+    #    message(STATUS "OPENAL_DLL_PATH: ${OPENAL_DLL_PATH}") # C:/dev/3rd_party/external_install/OpenAL/bin/OpenAL32.dll
 
     if (EXISTS "${OPENAL_DLL_PATH}")
         add_custom_command(TARGET OpenAL_minimalProject POST_BUILD
