@@ -1,4 +1,5 @@
 #include <asio.hpp>
+#include <asio/ssl.hpp>
 #include <iostream>
 #include <memory>
 #include <set>
@@ -42,12 +43,18 @@ class ChatRoom {
 // Represents a single client connection
 class ClientSession : public std::enable_shared_from_this<ClientSession> {
  public:
-  ClientSession(tcp::socket socket, ChatRoom& room)
-      : socket_(std::move(socket)), room_(room) {}
+  ClientSession(tcp::socket socket, asio::ssl::context& context, ChatRoom& room)
+      : socket_(std::move(socket), context), room_(room) {}
 
   void start() {
-    room_.join(shared_from_this());
-    doRead();
+    auto self(shared_from_this());
+    socket_.async_handshake(asio::ssl::stream_base::server,
+                            [this, self](std::error_code ec) {
+                              if (!ec) {
+                                room_.join(shared_from_this());
+                                doRead();
+                              }
+                            });
   }
 
   void deliver(const std::string& msg) {
@@ -78,7 +85,7 @@ class ClientSession : public std::enable_shared_from_this<ClientSession> {
                             });
   }
 
-  tcp::socket socket_;
+  asio::ssl::stream<tcp::socket> socket_;
   ChatRoom& room_;
 
   enum { max_length = 1024 };
@@ -94,7 +101,17 @@ void ChatRoom::deliverMessage(std::shared_ptr<ClientSession> session, const std:
 class ChatServer {
  public:
   ChatServer(asio::io_context& io_context, short port)
-      : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
+      : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
+        ssl_context_(asio::ssl::context::sslv23) {
+    // Configure SSL context (In real app, load your certificates here)
+    ssl_context_.set_options(asio::ssl::context::default_workarounds |
+                             asio::ssl::context::no_sslv2 |
+                             asio::ssl::context::single_dh_use);
+
+    // TODO For testing purposes only:
+    ssl_context_.use_certificate_chain_file("server.crt");
+    ssl_context_.use_private_key_file("server.key", asio::ssl::context::pem);
+
     doAccept();
   }
 
@@ -103,14 +120,14 @@ class ChatServer {
     acceptor_.async_accept(
         [this](std::error_code ec, tcp::socket socket) {
           if (!ec) {
-            std::cout << "Accepted new connection " << socket.remote_endpoint() << std::endl;
-            std::make_shared<ClientSession>(std::move(socket), room_)->start();
+            std::make_shared<ClientSession>(std::move(socket), ssl_context_, room_)->start();
           }
           doAccept();
         });
   }
 
   tcp::acceptor acceptor_;
+  asio::ssl::context ssl_context_;
   ChatRoom room_;
 };
 

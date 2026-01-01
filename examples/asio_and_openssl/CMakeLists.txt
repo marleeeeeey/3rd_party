@@ -6,6 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 list(APPEND CMAKE_PREFIX_PATH "../../external_install")
 
 find_package(asio REQUIRED)
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL REQUIRED) # Loaded from vcpkg or conan
 
 add_subdirectory(async_tcp)

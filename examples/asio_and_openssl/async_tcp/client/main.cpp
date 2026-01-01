@@ -1,4 +1,5 @@
 #include <asio.hpp>
+#include <asio/ssl.hpp>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -10,17 +11,17 @@ using asio::ip::tcp;
 
 class ChatClient {
  public:
-  ChatClient(asio::io_context& io_context, const std::string& host, const std::string& port)
-      : io_context_(io_context), socket_(io_context) {
+  ChatClient(asio::io_context& io_context, asio::ssl::context& ssl_context, const std::string& host, const std::string& port)
+      : io_context_(io_context), socket_(io_context, ssl_context) {
     tcp::resolver resolver(io_context);
-    asio::ip::basic_resolver_results<tcp> endpoints = resolver.resolve(host, port);
+    auto endpoints = resolver.resolve(host, port);
 
-    // Start connecting to the server
-    asio::async_connect(socket_, endpoints,
+    // 1. Connect the underlying TCP socket
+    asio::async_connect(socket_.lowest_layer(), endpoints,
                         [this](std::error_code ec, tcp::endpoint) {
                           if (!ec) {
-                            std::cout << "Connected to server!" << std::endl;
-                            do_read();  // Start listening for messages
+                            debugLog() << "TCP Connected. Starting SSL handshake..." << std::endl;
+                            do_handshake();
                           } else {
                             std::cerr << "Connection failed: " << ec.message() << std::endl;
                           }
@@ -44,6 +45,18 @@ class ChatClient {
   }
 
  private:
+  void do_handshake() {
+    socket_.async_handshake(asio::ssl::stream_base::client,
+                            [this](std::error_code ec) {
+                              if (!ec) {
+                                std::cout << "SSL Handshake successful! Connected to server." << std::endl;
+                                do_read();
+                              } else {
+                                std::cerr << "SSL Handshake failed: " << ec.message() << std::endl;
+                              }
+                            });
+  }
+
   void do_read() {
     socket_.async_read_some(asio::buffer(read_msg_),
                             [this](std::error_code ec, std::size_t length) {
@@ -53,7 +66,9 @@ class ChatClient {
                                 do_read();  // Wait for more data
                               } else {
                                 std::cout << "Disconnected from server." << std::endl;
-                                socket_.close();
+                                // In SSL, we should shut down the stream
+                                std::error_code ignored_ec;
+                                socket_.lowest_layer().close(ignored_ec);
                               }
                             });
   }
@@ -76,7 +91,7 @@ class ChatClient {
   }
 
   asio::io_context& io_context_;
-  tcp::socket socket_;
+  asio::ssl::stream<tcp::socket> socket_;
   char read_msg_[1024];
 };
 
@@ -85,8 +100,15 @@ int main(int argc, char* argv[]) {
   try {
     asio::io_context io_context;
 
-    // Connect to localhost by default
-    ChatClient client(io_context, "127.0.0.1", "12345");
+    // 2. Create SSL context.
+    // sslv23 is a generic method that supports various TLS versions.
+    asio::ssl::context ssl_context(asio::ssl::context::sslv23);
+
+    // TODO. Optional: Load trusted CAs if you want to verify the server
+    ssl_context.set_verify_mode(asio::ssl::verify_peer);
+    ssl_context.load_verify_file("server.crt");  // "ca.pem"
+
+    ChatClient client(io_context, ssl_context, "127.0.0.1", "12345");
 
     // Run Asio loop in a background thread so it doesn't block std::getline
     std::thread t([&io_context]() {
