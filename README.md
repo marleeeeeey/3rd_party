@@ -8,6 +8,9 @@ I wanted to control the library build process to simplify cross-platform compila
 
 ### How to build 3rd party libraries (download and install)
 
+Download and install OpenSSL to the system using any method to make it available to CMake.
+For example, for Windows machine I download and install MSI package from https://slproweb.com/products/Win32OpenSSL.html.
+
 ```shell
 cmake -P download_all.cmake
 ```

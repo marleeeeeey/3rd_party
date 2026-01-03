@@ -3,7 +3,7 @@
 
 # Find flatc compiler if not already found
 if (NOT FLATC_EXECUTABLE)
-    set(FLATC_PATH "${CMAKE_SOURCE_DIR}/external_install/flatbuffers/bin")
+    set(FLATC_PATH "${CMAKE_CURRENT_LIST_DIR}/external_install/flatbuffers/bin")
     find_program(FLATC_EXECUTABLE flatc PATHS ${FLATC_PATH})
 endif ()
 
