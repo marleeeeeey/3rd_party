@@ -12,6 +12,9 @@ endif ()
 
 # --- Helper Methods ---
 
+
+# Method never used in my project but it workable. Initially used if for OpenSSL, but it is too complex solution.
+# User may install OpenSSL more simple way that using VCPKG.
 function(setup_vcpkg_and_install_manifest)
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source")
     set(VCPKG_DIR "${CMAKE_CURRENT_LIST_DIR}/external_source/vcpkg")
@@ -59,11 +62,11 @@ function(setup_vcpkg_and_install_manifest)
 endfunction()
 
 
+# CMake handles existing directories and only updates what's necessary.
 function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR)
-    message(STATUS "--- Incremental build for ${PROJECT_NAME} ---")
+    message(STATUS "Incremental build for ${PROJECT_NAME}")
 
     # 1. Configuration (Generation)
-    # CMake handles existing directories and only updates what's necessary.
     execute_process(
             COMMAND ${CMAKE_COMMAND} -S "${PROJECT_SOURCE_DIR}" -B "${PROJECT_BUILD_DIR}"
             "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_LIST_DIR}/external_install"
@@ -86,8 +89,8 @@ function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR)
 endfunction()
 
 
-# Universal function to download, build, and install a library
-function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
+# CMake download, build, and install a library
+function(download_and_install LIB_NAME LIB_URL LIB_VERSION CUSTOM_CMAKE_FILE)
     set(SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/external_source/${LIB_NAME}")
     set(BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/external_build/${LIB_NAME}")
     set(INSTALL_DIR "${CMAKE_CURRENT_LIST_DIR}/external_install/${LIB_NAME}")
@@ -166,6 +169,15 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
         )
     endif ()
 
+    # 3.1 Patching with custom CMakeLists.txt if provided
+    set(PATCHED_CMAKE FALSE)
+    if (CUSTOM_CMAKE_FILE)
+        message(STATUS "Patching ${LIB_NAME} with custom file: ${CUSTOM_CMAKE_FILE}")
+        file(COPY "${CMAKE_CURRENT_LIST_DIR}/${CUSTOM_CMAKE_FILE}" DESTINATION "${SOURCE_DIR}")
+        file(RENAME "${SOURCE_DIR}/${CUSTOM_CMAKE_FILE}" "${SOURCE_DIR}/CMakeLists.txt")
+        set(PATCHED_CMAKE TRUE)
+    endif ()
+
     # 4. Clean
     file(REMOVE_RECURSE "${BUILD_DIR}")
     file(REMOVE_RECURSE "${INSTALL_DIR}")
@@ -190,69 +202,45 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION)
     execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
     execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
 
+    # 8. Cleanup patched file
+    if (PATCHED_CMAKE)
+        file(REMOVE "${SOURCE_DIR}/CMakeLists.txt")
+    endif ()
+
     message(STATUS "Finished ${LIB_NAME}")
 endfunction()
 
 
-# Function for libraries without built-in CMake (like ImGui)
-function(download_and_install_with_custom_cmakelists LIB_NAME LIB_URL LIB_VERSION CUSTOM_CMAKE_FILE)
-    set(SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/external_source/${LIB_NAME}")
-    set(INSTALL_DIR "${CMAKE_CURRENT_LIST_DIR}/external_install/${LIB_NAME}")
-
-    # Check if the library is already installed
-    if (EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
-        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}")
-        return()
-    endif ()
-
-    # First, make sure we have the source code
-    if (NOT EXISTS "${SOURCE_DIR}")
-        file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source")
-        execute_process(COMMAND git clone "${LIB_URL}" "${LIB_NAME}" WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source")
-    endif ()
-    execute_process(COMMAND git checkout "${LIB_VERSION}" WORKING_DIRECTORY "${SOURCE_DIR}")
-
-    # Copy the custom CMakeLists.txt into the library source folder
-    message(STATUS "Patching ${LIB_NAME} with ${CUSTOM_CMAKE_FILE}...")
-    file(COPY "${CMAKE_CURRENT_LIST_DIR}/${CUSTOM_CMAKE_FILE}" DESTINATION "${SOURCE_DIR}")
-    file(RENAME "${SOURCE_DIR}/${CUSTOM_CMAKE_FILE}" "${SOURCE_DIR}/CMakeLists.txt")
-
-    # Call the standard build function (now that CMakeLists.txt is present)
-    download_and_install("${LIB_NAME}" "${LIB_URL}" "${LIB_VERSION}" ${ARGN})
-
-    # Cleanup: remove the injected CMakeLists.txt
-    file(REMOVE "${SOURCE_DIR}/CMakeLists.txt")
-endfunction()
-
-
 function(run_all_downloads)
-    download_and_install("box2d" "https://github.com/erincatto/box2d.git" "v3.1.1")
-    download_and_install("EnTT" "https://github.com/skypjack/entt.git" "v3.16.0" "-DENTT_INSTALL=ON")
-    download_and_install("nlohmann_json" "https://github.com/nlohmann/json.git" "v3.12.0" "-DJSON_BuildTests=OFF")
-    download_and_install("SDL3" "https://github.com/libsdl-org/SDL.git" "release-3.2.28")
+    download_and_install("box2d" "https://github.com/erincatto/box2d.git" "v3.1.1" "")
+    download_and_install("EnTT" "https://github.com/skypjack/entt.git" "v3.16.0" ""
+            "-DENTT_INSTALL=ON")
+    download_and_install("nlohmann_json" "https://github.com/nlohmann/json.git" "v3.12.0" ""
+            "-DJSON_BuildTests=OFF")
+    download_and_install("SDL3" "https://github.com/libsdl-org/SDL.git" "release-3.2.28" "")
     # SDL3_image requires SDL3 to be installed first
-    download_and_install("SDL3_image" "https://github.com/libsdl-org/SDL_image.git" "release-3.2.4"
+    download_and_install("SDL3_image" "https://github.com/libsdl-org/SDL_image.git" "release-3.2.4" ""
             "-DSDLIMAGE_AVIF=OFF" # fix error: No CMAKE_ASM_NASM_COMPILER could be found
     )
     # ImGui requires SDL3 to be installed first
-    download_and_install_with_custom_cmakelists("imgui" "https://github.com/ocornut/imgui.git" "v1.92.5" "imgui_CMakeLists.txt")
-    download_and_install("spdlog" "https://github.com/gabime/spdlog.git" "v1.16.0")
-    download_and_install("glm" "https://github.com/g-truc/glm.git" "1.0.2")
-    download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v0.9.7"
+    download_and_install("imgui" "https://github.com/ocornut/imgui.git" "v1.92.5" "imgui_CMakeLists.txt")
+    download_and_install("spdlog" "https://github.com/gabime/spdlog.git" "v1.16.0" "")
+    download_and_install("glm" "https://github.com/g-truc/glm.git" "1.0.2" "")
+    download_and_install("magic_enum" "https://github.com/Neargye/magic_enum.git" "v0.9.7" ""
             "-DMAGIC_ENUM_OPT_BUILD_EXAMPLES=OFF"
             "-DMAGIC_ENUM_OPT_BUILD_TESTS=OFF"
     )
-    download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0")
+    download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0" "")
     # OpenAL is analog of SDL3_audio
-    download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0")
-    download_and_install_with_custom_cmakelists("implot" "https://github.com/epezent/implot.git" "v0.17" "implot_CMakeLists.txt")
+    download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0" "")
+    download_and_install("implot" "https://github.com/epezent/implot.git" "v0.17" "implot_CMakeLists.txt")
     # Tracy client. It sends data to Tracy server called "tracy-profiler.exe".
-    download_and_install("Tracy" "https://github.com/wolfpld/tracy.git" "v0.13.1")
-    download_and_install("miniaudio" "https://github.com/mackron/miniaudio.git" "0.11.23")
-    download_and_install_with_custom_cmakelists("enet" "https://github.com/lsalzman/enet.git" "v1.3.18" "enet_CMakeLists.txt")
-    download_and_install_with_custom_cmakelists("asio" "https://github.com/chriskohlhoff/asio.git" "asio-1-36-0" "asio_CMakeLists.txt")
-    download_and_install("flatbuffers" "https://github.com/google/flatbuffers.git" "v25.12.19")
-    download_and_install("cxxopts" "https://github.com/jarro2783/cxxopts.git" "v3.3.1")
+    download_and_install("Tracy" "https://github.com/wolfpld/tracy.git" "v0.13.1" "")
+    download_and_install("miniaudio" "https://github.com/mackron/miniaudio.git" "0.11.23" "")
+    download_and_install("enet" "https://github.com/lsalzman/enet.git" "v1.3.18" "enet_CMakeLists.txt")
+    download_and_install("asio" "https://github.com/chriskohlhoff/asio.git" "asio-1-36-0" "asio_CMakeLists.txt")
+    download_and_install("flatbuffers" "https://github.com/google/flatbuffers.git" "v25.12.19" "")
+    download_and_install("cxxopts" "https://github.com/jarro2783/cxxopts.git" "v3.3.1" "")
 endfunction()
 
 
