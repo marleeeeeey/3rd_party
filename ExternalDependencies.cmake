@@ -1,79 +1,165 @@
-# --- Global flags ---
+# --- Config ---
 
-# Set to TRUE if you want to wipe and rebuild everything.
-if (NOT DEFINED FORCE_REBUILD)
-    set(FORCE_REBUILD FALSE)
-endif ()
+# 1. Set build type if not present
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
 
-# If TRUE: do not run smoke tests for libraries that are already installed
-if (NOT DEFINED BUILD_EXAMPLES)
-    set(BUILD_EXAMPLES FALSE)
-endif ()
+if(NOT CMAKE_GENERATOR)
+    find_program(NINJA_PATH ninja)
+    if(NINJA_PATH)
+        set(CMAKE_GENERATOR "Ninja")
+        set(CMAKE_MAKE_PROGRAM "${NINJA_PATH}")
+    elseif(WIN32)
+        set(CMAKE_GENERATOR "Visual Studio 17 2022")
+    else()
+        set(CMAKE_GENERATOR "Unix Makefiles")
+    endif()
+endif()
 
-set(EXTERNAL_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/external_source" CACHE PATH "Path to external libraries source code")
-set(EXTERNAL_BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/external_build" CACHE PATH "Path to external libraries build artifacts")
-set(EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_LIST_DIR}/external_install" CACHE PATH "Path to external libraries installation")
+if(NOT CMAKE_C_COMPILER)
+    find_program(C_COMPILER_PATH NAMES clang gcc cl cc)
+    if(C_COMPILER_PATH)
+        set(CMAKE_C_COMPILER "${C_COMPILER_PATH}")
+    endif()
+endif()
+
+if(NOT CMAKE_CXX_COMPILER)
+    find_program(CXX_COMPILER_PATH NAMES clang++ g++ cl CC)
+    if(CXX_COMPILER_PATH)
+        set(CMAKE_CXX_COMPILER "${CXX_COMPILER_PATH}")
+    endif()
+endif()
+
+# 2. Set paths
+set(EXTERNAL_SOURCE_DIR  "${CMAKE_CURRENT_LIST_DIR}/external_source")
+set(EXTERNAL_BUILD_DIR   "${CMAKE_CURRENT_LIST_DIR}/external_build/${CMAKE_BUILD_TYPE}")
+set(EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_LIST_DIR}/external_install/${CMAKE_BUILD_TYPE}")
+
+# 3. Custom flags
+set(FORCE_REBUILD  FALSE CACHE BOOL "Wipe and rebuild everything")
+set(BUILD_EXAMPLES TRUE CACHE BOOL "Build smoke tests/examples")
+
 
 # --- Helper Methods ---
 
 
+function(ExternalDependencies_print_global_variables)
+    message(STATUS "------------------------------------------------------------")
+    message(STATUS "3rd Party Projects Configuration:")
+    message(STATUS "  Generator:       ${CMAKE_GENERATOR}")
+    message(STATUS "  Build Type:      ${CMAKE_BUILD_TYPE}")
+    message(STATUS "  Make Program:    ${CMAKE_MAKE_PROGRAM}")
+    message(STATUS "  C Compiler:      ${CMAKE_C_COMPILER}")
+    message(STATUS "  CXX Compiler:    ${CMAKE_CXX_COMPILER}")
+    message(STATUS "  Source Dir:      ${EXTERNAL_SOURCE_DIR}")
+    message(STATUS "  Build Dir:       ${EXTERNAL_BUILD_DIR}")
+    message(STATUS "  Install Dir:     ${EXTERNAL_INSTALL_DIR}")
+    message(STATUS "  Force Rebuild:   ${FORCE_REBUILD}")
+    message(STATUS "  Build Examples:  ${BUILD_EXAMPLES}")
+    message(STATUS "------------------------------------------------------------")
+endfunction()
+
+
 # CMake handles existing directories and only updates what's necessary.
 function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR PROJECT_INSTALL_DIR)
+    message("")
+    message("")
     message(STATUS "Incremental build for ${PROJECT_NAME}")
 
-    # 1. Configuration (Generation)
+    set(COMMON_ARGS
+            "-G${CMAKE_GENERATOR}"
+            "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+            "-DCMAKE_INSTALL_PREFIX=${PROJECT_INSTALL_DIR}"
+            "-DCMAKE_PREFIX_PATH=${EXTERNAL_INSTALL_DIR}"
+    )
+
+    # Next arguments added if not present. Sometimes it may help to autodetect them
+    if(CMAKE_C_COMPILER)
+        list(APPEND COMMON_ARGS "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
+    endif()
+    if(CMAKE_CXX_COMPILER)
+        list(APPEND COMMON_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+    endif()
+    if(CMAKE_MAKE_PROGRAM)
+        list(APPEND COMMON_ARGS "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}")
+    endif()
+
+    message(STATUS "Final arguments for ${PROJECT_NAME}:")
+    foreach(arg IN LISTS COMMON_ARGS ARGN)
+        message(STATUS "  ${arg}")
+    endforeach()
+
+    message(STATUS "Configuring ${PROJECT_NAME} [${CMAKE_BUILD_TYPE}]...")
     execute_process(
             COMMAND ${CMAKE_COMMAND}
             -S "${PROJECT_SOURCE_DIR}"
             -B "${PROJECT_BUILD_DIR}"
-
-            # Setup compiler
-            -G Ninja
-            "-DCMAKE_BUILD_TYPE=Release"
-            "-DCMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO=Release"
-            "-DCMAKE_C_COMPILER=clang"
-            "-DCMAKE_CXX_COMPILER=clang++"
-
-            # Other args
-            "-DCMAKE_INSTALL_PREFIX=${PROJECT_INSTALL_DIR}"
-            "-DCMAKE_PREFIX_PATH=${EXTERNAL_INSTALL_DIR}"
-            "-DCMAKE_DEBUG_POSTFIX=d"
+            ${COMMON_ARGS}
             ${ARGN}
-
             COMMAND_ERROR_IS_FATAL ANY
     )
 
-    foreach (CONFIG IN ITEMS Debug Release)
-        message(STATUS "Installing ${LIB_NAME} [${CONFIG}]...")
-        execute_process(COMMAND ${CMAKE_COMMAND} --build "${PROJECT_BUILD_DIR}" --config ${CONFIG} COMMAND_ERROR_IS_FATAL ANY)
-        execute_process(COMMAND ${CMAKE_COMMAND} --install "${PROJECT_BUILD_DIR}" --config ${CONFIG} COMMAND_ERROR_IS_FATAL ANY)
-    endforeach ()
+    message(STATUS "Building ${PROJECT_NAME} [${CMAKE_BUILD_TYPE}]...")
+    execute_process(
+            COMMAND ${CMAKE_COMMAND}
+            --build "${PROJECT_BUILD_DIR}"
+            --config ${CMAKE_BUILD_TYPE}
+            COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    message(STATUS "Installing ${PROJECT_NAME} [${CMAKE_BUILD_TYPE}]...")
+    execute_process(
+            COMMAND ${CMAKE_COMMAND}
+            --install "${PROJECT_BUILD_DIR}"
+            --config ${CMAKE_BUILD_TYPE}
+            COMMAND_ERROR_IS_FATAL ANY
+    )
 
     message(STATUS "Project build ${PROJECT_NAME} PASSED.")
 endfunction()
 
 
 function(download_and_install_openssl)
+    message("")
+    message("")
+    message(STATUS "Download OpenSSL as achieve and unpack")
     if (NOT WIN32)
         message(WARNING "Skipping OpenSSL download: This binary package is only for Windows. Please install OpenSSL manually using your system package manager.")
         return()
     endif ()
 
     set(OPENSSL_URL "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-3.6.0.zip")
+    set(EXPECTED_OPENSSL_SHA256 "c1c831e8bcce7d6c204d6813aafb87c0d44dd88841ab31105185b55cdec1d759")
     set(INSTALL_DIR "${EXTERNAL_INSTALL_DIR}/openssl")
     set(TEMP_ARCHIVE "${EXTERNAL_SOURCE_DIR}/openssl.zip")
 
-    if (EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
-        message(STATUS "Skipping OpenSSL: Already installed in ${INSTALL_DIR}")
-        return()
+    set(NEED_DOWNLOAD TRUE)
+    if (EXISTS "${TEMP_ARCHIVE}")
+        file(SHA256 "${TEMP_ARCHIVE}" ACTUAL_OPENSSL_SHA256)
+        message(STATUS "ACTUAL_OPENSSL_SHA256=${ACTUAL_OPENSSL_SHA256}")
+        if ("${ACTUAL_OPENSSL_SHA256}" STREQUAL "${EXPECTED_OPENSSL_SHA256}")
+            message(STATUS "OpenSSL archive already exists and hash is valid. Skipping download.")
+            set(NEED_DOWNLOAD FALSE)
+        else ()
+            message(WARNING "OpenSSL archive hash mismatch. Re-downloading...")
+            file(REMOVE "${TEMP_ARCHIVE}")
+        endif ()
     endif ()
 
-    message(STATUS "Downloading OpenSSL from ${OPENSSL_URL}...")
-    file(DOWNLOAD "${OPENSSL_URL}" "${TEMP_ARCHIVE}" SHOW_PROGRESS STATUS DOWNLOAD_STATUS)
+    if (NEED_DOWNLOAD)
+        message(STATUS "Downloading OpenSSL from ${OPENSSL_URL}...")
+        file(DOWNLOAD "${OPENSSL_URL}" "${TEMP_ARCHIVE}"
+                EXPECTED_HASH SHA256=${EXPECTED_OPENSSL_SHA256}
+                SHOW_PROGRESS
+                STATUS DOWNLOAD_STATUS)
 
-    list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
-    if (NOT STATUS_CODE EQUAL 0)
-        message(FATAL_ERROR "Failed to download OpenSSL: ${DOWNLOAD_STATUS}")
+        list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+        list(GET DOWNLOAD_STATUS 1 ERROR_MESSAGE)
+
+        if (NOT STATUS_CODE EQUAL 0)
+            message(FATAL_ERROR "Failed to download OpenSSL: DOWNLOAD_STATUS=${DOWNLOAD_STATUS}. ERROR_MESSAGE=${ERROR_MESSAGE}")
+        endif ()
     endif ()
 
     message(STATUS "Extracting OpenSSL to ${INSTALL_DIR}...")
@@ -84,8 +170,7 @@ function(download_and_install_openssl)
             COMMAND_ERROR_IS_FATAL ANY
     )
 
-    file(REMOVE "${TEMP_ARCHIVE}")
-    message(STATUS "Finished OpenSSL")
+    message(STATUS "Finished OpenSSL extraction")
 endfunction()
 
 
@@ -129,13 +214,11 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION CUSTOM_CMAKE_FILE)
     endif ()
 
 
-#    # 2. Check if the library is already installed
-#    if (NOT VERSION_CHANGED AND EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
-#        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}. URL: ${LIB_URL}")
-#        return()
-#    endif ()
-
-    message(STATUS "Processing ${LIB_NAME} (${LIB_VERSION})")
+    #    # 2. Check if the library is already installed
+    #    if (NOT VERSION_CHANGED AND EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
+    #        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}. URL: ${LIB_URL}")
+    #        return()
+    #    endif ()
 
     # 3. Checkout to specific commit if needed
     if (VERSION_CHANGED)
@@ -190,7 +273,7 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION CUSTOM_CMAKE_FILE)
 endfunction()
 
 
-function(run_all_downloads)
+function(ExternalDependencies_download_all)
     download_and_install_openssl()
     download_and_install("box2d" "https://github.com/erincatto/box2d.git" "v3.1.1" "")
     download_and_install("EnTT" "https://github.com/skypjack/entt.git" "v3.16.0" ""
@@ -212,7 +295,11 @@ function(run_all_downloads)
     )
     download_and_install("GTest" "https://github.com/google/googletest.git" "v1.17.0" "")
     # OpenAL is analog of SDL3_audio
-    download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0" "")
+    download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0" ""
+            "-DCMAKE_CXX_SCAN_FOR_MODULES=OFF"
+            "-DALSOFT_EXAMPLES=OFF"
+            "-DALSOFT_TESTS=OFF"
+    )
     download_and_install("implot" "https://github.com/epezent/implot.git" "v0.17" "implot_CMakeLists.txt")
     # Tracy client. It sends data to Tracy server called "tracy-profiler.exe".
     download_and_install("Tracy" "https://github.com/wolfpld/tracy.git" "v0.13.1" ""
@@ -224,19 +311,7 @@ function(run_all_downloads)
             "-DFLATBUFFERS_BUILD_TESTS=OFF")
     download_and_install("cxxopts" "https://github.com/jarro2783/cxxopts.git" "v3.3.1" ""
             "-DCXXOPTS_BUILD_TESTS=OFF")
-endfunction()
 
-
-function(main)
-    # Record the start time (in seconds)
-    string(TIMESTAMP START_TIME "%s")
-
-    # Handle complex dependencies via vcpkg
-    # setup_vcpkg_and_install_manifest()
-
-    run_all_downloads()
-
-    # --- Smoke Test: Build all examples ---
     if (BUILD_EXAMPLES)
         message(STATUS "Installing examples")
         set(EXAMPLES_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/examples")
@@ -244,22 +319,4 @@ function(main)
         set(EXAMPLES_INSTALL_DIR "${EXTERNAL_INSTALL_DIR}/examples")
         build_cmake_project("examples" "${EXAMPLES_SOURCE_DIR}" "${EXAMPLES_BUILD_DIR}" "${EXAMPLES_INSTALL_DIR}")
     endif ()
-
-    message(STATUS "download_all.cmake scripts completed with options:")
-    message(STATUS "  FORCE_REBUILD=${FORCE_REBUILD}")
-    message(STATUS "  BUILD_EXAMPLES=${BUILD_EXAMPLES}")
-
-    # Total execution time
-    string(TIMESTAMP END_TIME "%s")
-    math(EXPR DURATION "${END_TIME} - ${START_TIME}")
-    math(EXPR MINUTES "${DURATION} / 60")
-    math(EXPR SECONDS "${DURATION} % 60")
-    message(STATUS "Total execution time: ${MINUTES} min ${SECONDS} sec")
 endfunction()
-
-
-# --- MAIN ---
-
-if (CMAKE_SCRIPT_MODE_FILE)
-    main()
-endif ()

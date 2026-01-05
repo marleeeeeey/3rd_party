@@ -3,8 +3,11 @@
 
 # Find flatc compiler if not already found
 if (NOT FLATC_EXECUTABLE)
-    set(FLATC_PATH "${CMAKE_CURRENT_LIST_DIR}/external_install/flatbuffers/bin")
+    set(FLATC_PATH "${CMAKE_CURRENT_LIST_DIR}/external_install/${CMAKE_BUILD_TYPE}/flatbuffers/bin")
     find_program(FLATC_EXECUTABLE flatc PATHS ${FLATC_PATH})
+    if (NOT FLATC_EXECUTABLE)
+        message(FATAL_ERROR "flatc not found in ${FLATC_PATH}")
+    endif ()
 endif ()
 
 # Function to compile FlatBuffers schema and create a logical target
