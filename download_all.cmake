@@ -6,104 +6,104 @@ if (NOT DEFINED FORCE_REBUILD)
 endif ()
 
 # If TRUE: do not run smoke tests for libraries that are already installed
-if (NOT DEFINED SKIP_EXAMPLES_BUILDING)
-    set(SKIP_EXAMPLES_BUILDING FALSE)
+if (NOT DEFINED BUILD_EXAMPLES)
+    set(BUILD_EXAMPLES FALSE)
 endif ()
+
+set(EXTERNAL_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/external_source" CACHE PATH "Path to external libraries source code")
+set(EXTERNAL_BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/external_build" CACHE PATH "Path to external libraries build artifacts")
+set(EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_LIST_DIR}/external_install" CACHE PATH "Path to external libraries installation")
 
 # --- Helper Methods ---
 
 
-# Method never used in my project but it workable. Initially used if for OpenSSL, but it is too complex solution.
-# User may install OpenSSL more simple way that using VCPKG.
-function(setup_vcpkg_and_install_manifest)
-    file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source")
-    set(VCPKG_DIR "${CMAKE_CURRENT_LIST_DIR}/external_source/vcpkg")
-
-    # 1. Clone vcpkg if missing
-    if (NOT EXISTS "${VCPKG_DIR}")
-        message(STATUS "vcpkg not found. Cloning into ${VCPKG_DIR}...")
-        execute_process(
-                COMMAND git clone https://github.com/microsoft/vcpkg.git "${VCPKG_DIR}"
-                COMMAND_ERROR_IS_FATAL ANY
-        )
-    endif ()
-
-    # 2. Bootstrap vcpkg if executable is missing
-    if (WIN32)
-        set(VCPKG_EXE "${VCPKG_DIR}/vcpkg.exe")
-        set(BOOTSTRAP_CMD "${VCPKG_DIR}/bootstrap-vcpkg.bat")
-    else ()
-        set(VCPKG_EXE "${VCPKG_DIR}/vcpkg")
-        set(BOOTSTRAP_CMD "${VCPKG_DIR}/bootstrap-vcpkg.sh")
-    endif ()
-
-    if (NOT EXISTS "${VCPKG_EXE}")
-        message(STATUS "Bootstrapping vcpkg...")
-        execute_process(
-                COMMAND "${BOOTSTRAP_CMD}"
-                WORKING_DIRECTORY "${VCPKG_DIR}"
-                COMMAND_ERROR_IS_FATAL ANY
-        )
-    endif ()
-
-    # 3. Run vcpkg install (Manifest Mode)
-    # This will read vcpkg.json from the project root and install OpenSSL and other dependencies.
-    message(STATUS "Running vcpkg install (Manifest Mode)...")
-
-    set(VCPKG_INSTALL_ROOT "${CMAKE_CURRENT_LIST_DIR}/external_install/vcpkg_installed")
-    file(TO_CMAKE_PATH "${VCPKG_INSTALL_ROOT}" VCPKG_INSTALL_ROOT)
-
-    execute_process(
-            COMMAND "${VCPKG_EXE}" install
-            "--x-install-root=${VCPKG_INSTALL_ROOT}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-            COMMAND_ERROR_IS_FATAL ANY
-    )
-endfunction()
-
-
 # CMake handles existing directories and only updates what's necessary.
-function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR)
+function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR PROJECT_INSTALL_DIR)
     message(STATUS "Incremental build for ${PROJECT_NAME}")
 
     # 1. Configuration (Generation)
     execute_process(
-            COMMAND ${CMAKE_COMMAND} -S "${PROJECT_SOURCE_DIR}" -B "${PROJECT_BUILD_DIR}"
-            "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_LIST_DIR}/external_install"
+            COMMAND ${CMAKE_COMMAND}
+            -S "${PROJECT_SOURCE_DIR}"
+            -B "${PROJECT_BUILD_DIR}"
+
+            # Setup compiler
+            -G Ninja
+            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO=Release"
+            "-DCMAKE_C_COMPILER=clang"
+            "-DCMAKE_CXX_COMPILER=clang++"
+
+            # Other args
+            "-DCMAKE_INSTALL_PREFIX=${PROJECT_INSTALL_DIR}"
+            "-DCMAKE_PREFIX_PATH=${EXTERNAL_INSTALL_DIR}"
+            "-DCMAKE_DEBUG_POSTFIX=d"
+            ${ARGN}
+
             COMMAND_ERROR_IS_FATAL ANY
     )
 
-    # 2. Build Release configuration
-    execute_process(
-            COMMAND ${CMAKE_COMMAND} --build "${PROJECT_BUILD_DIR}" --config Release
-            COMMAND_ERROR_IS_FATAL ANY
-    )
-
-    # 3. Build Debug configuration
-    execute_process(
-            COMMAND ${CMAKE_COMMAND} --build "${PROJECT_BUILD_DIR}" --config Debug
-            COMMAND_ERROR_IS_FATAL ANY
-    )
+    foreach (CONFIG IN ITEMS Debug Release)
+        message(STATUS "Installing ${LIB_NAME} [${CONFIG}]...")
+        execute_process(COMMAND ${CMAKE_COMMAND} --build "${PROJECT_BUILD_DIR}" --config ${CONFIG} COMMAND_ERROR_IS_FATAL ANY)
+        execute_process(COMMAND ${CMAKE_COMMAND} --install "${PROJECT_BUILD_DIR}" --config ${CONFIG} COMMAND_ERROR_IS_FATAL ANY)
+    endforeach ()
 
     message(STATUS "Project build ${PROJECT_NAME} PASSED.")
 endfunction()
 
 
+function(download_and_install_openssl)
+    if (NOT WIN32)
+        message(WARNING "Skipping OpenSSL download: This binary package is only for Windows. Please install OpenSSL manually using your system package manager.")
+        return()
+    endif ()
+
+    set(OPENSSL_URL "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-3.6.0.zip")
+    set(INSTALL_DIR "${EXTERNAL_INSTALL_DIR}/openssl")
+    set(TEMP_ARCHIVE "${EXTERNAL_SOURCE_DIR}/openssl.zip")
+
+    if (EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
+        message(STATUS "Skipping OpenSSL: Already installed in ${INSTALL_DIR}")
+        return()
+    endif ()
+
+    message(STATUS "Downloading OpenSSL from ${OPENSSL_URL}...")
+    file(DOWNLOAD "${OPENSSL_URL}" "${TEMP_ARCHIVE}" SHOW_PROGRESS STATUS DOWNLOAD_STATUS)
+
+    list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+    if (NOT STATUS_CODE EQUAL 0)
+        message(FATAL_ERROR "Failed to download OpenSSL: ${DOWNLOAD_STATUS}")
+    endif ()
+
+    message(STATUS "Extracting OpenSSL to ${INSTALL_DIR}...")
+    file(MAKE_DIRECTORY "${INSTALL_DIR}")
+    execute_process(
+            COMMAND ${CMAKE_COMMAND} -E tar xzf "${TEMP_ARCHIVE}"
+            WORKING_DIRECTORY "${INSTALL_DIR}"
+            COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    file(REMOVE "${TEMP_ARCHIVE}")
+    message(STATUS "Finished OpenSSL")
+endfunction()
+
+
 # CMake download, build, and install a library
 function(download_and_install LIB_NAME LIB_URL LIB_VERSION CUSTOM_CMAKE_FILE)
-    set(SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/external_source/${LIB_NAME}")
-    set(BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/external_build/${LIB_NAME}")
-    set(INSTALL_DIR "${CMAKE_CURRENT_LIST_DIR}/external_install/${LIB_NAME}")
+    set(SOURCE_DIR "${EXTERNAL_SOURCE_DIR}/${LIB_NAME}")
+    set(BUILD_DIR "${EXTERNAL_BUILD_DIR}/${LIB_NAME}")
+    set(INSTALL_DIR "${EXTERNAL_INSTALL_DIR}/${LIB_NAME}")
 
     # 1. Clone the repository or detect VERSION_CHANGED
     set(VERSION_CHANGED FALSE)
     if (NOT EXISTS "${SOURCE_DIR}")
         # Create external_source directory if it doesn't exist
-        file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source")
+        file(MAKE_DIRECTORY "${EXTERNAL_SOURCE_DIR}")
 
         execute_process(
                 COMMAND git clone --recursive "${LIB_URL}" "${LIB_NAME}"
-                WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external_source"
+                WORKING_DIRECTORY "${EXTERNAL_SOURCE_DIR}"
                 COMMAND_ERROR_IS_FATAL ANY
         )
     else ()
@@ -129,11 +129,11 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION CUSTOM_CMAKE_FILE)
     endif ()
 
 
-    # 2. Check if the library is already installed
-    if (NOT VERSION_CHANGED AND EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
-        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}. URL: ${LIB_URL}")
-        return()
-    endif ()
+#    # 2. Check if the library is already installed
+#    if (NOT VERSION_CHANGED AND EXISTS "${INSTALL_DIR}" AND NOT FORCE_REBUILD)
+#        message(STATUS "Skipping ${LIB_NAME}: Already installed in ${INSTALL_DIR}. URL: ${LIB_URL}")
+#        return()
+#    endif ()
 
     message(STATUS "Processing ${LIB_NAME} (${LIB_VERSION})")
 
@@ -179,39 +179,19 @@ function(download_and_install LIB_NAME LIB_URL LIB_VERSION CUSTOM_CMAKE_FILE)
     endif ()
 
     # 4. Clean
-    file(REMOVE_RECURSE "${BUILD_DIR}")
-    file(REMOVE_RECURSE "${INSTALL_DIR}")
-
-    # 5. Configure
-    execute_process(
-            COMMAND ${CMAKE_COMMAND} -S "${SOURCE_DIR}" -B "${BUILD_DIR}"
-            "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
-            "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_LIST_DIR}/external_install"
-            "-DCMAKE_DEBUG_POSTFIX=d"
-            ${ARGN}
-            COMMAND_ERROR_IS_FATAL ANY
-    )
-
-    # 6. Build and Install Debug
-    message(STATUS "Installing ${LIB_NAME} [Debug]...")
-    execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Debug COMMAND_ERROR_IS_FATAL ANY)
-    execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Debug COMMAND_ERROR_IS_FATAL ANY)
-
-    # 7. Build and Install Release
-    message(STATUS "Installing ${LIB_NAME} [Release]...")
-    execute_process(COMMAND ${CMAKE_COMMAND} --build "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
-    execute_process(COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --config Release COMMAND_ERROR_IS_FATAL ANY)
-
-    # 8. Cleanup patched file
-    if (PATCHED_CMAKE)
-        file(REMOVE "${SOURCE_DIR}/CMakeLists.txt")
+    if (FORCE_REBUILD)
+        file(REMOVE_RECURSE "${BUILD_DIR}")
+        file(REMOVE_RECURSE "${INSTALL_DIR}")
     endif ()
+
+    build_cmake_project(${LIB_NAME} ${SOURCE_DIR} ${BUILD_DIR} ${INSTALL_DIR} ${ARGN})
 
     message(STATUS "Finished ${LIB_NAME}")
 endfunction()
 
 
 function(run_all_downloads)
+    download_and_install_openssl()
     download_and_install("box2d" "https://github.com/erincatto/box2d.git" "v3.1.1" "")
     download_and_install("EnTT" "https://github.com/skypjack/entt.git" "v3.16.0" ""
             "-DENTT_INSTALL=ON")
@@ -235,12 +215,15 @@ function(run_all_downloads)
     download_and_install("OpenAL" "https://github.com/kcat/openal-soft.git" "1.25.0" "")
     download_and_install("implot" "https://github.com/epezent/implot.git" "v0.17" "implot_CMakeLists.txt")
     # Tracy client. It sends data to Tracy server called "tracy-profiler.exe".
-    download_and_install("Tracy" "https://github.com/wolfpld/tracy.git" "v0.13.1" "")
+    download_and_install("Tracy" "https://github.com/wolfpld/tracy.git" "v0.13.1" ""
+            "-DCMAKE_CXX_STANDARD=20")
     download_and_install("miniaudio" "https://github.com/mackron/miniaudio.git" "0.11.23" "")
     download_and_install("enet" "https://github.com/lsalzman/enet.git" "v1.3.18" "enet_CMakeLists.txt")
     download_and_install("asio" "https://github.com/chriskohlhoff/asio.git" "asio-1-36-0" "asio_CMakeLists.txt")
-    download_and_install("flatbuffers" "https://github.com/google/flatbuffers.git" "v25.12.19" "")
-    download_and_install("cxxopts" "https://github.com/jarro2783/cxxopts.git" "v3.3.1" "")
+    download_and_install("flatbuffers" "https://github.com/google/flatbuffers.git" "v25.12.19" ""
+            "-DFLATBUFFERS_BUILD_TESTS=OFF")
+    download_and_install("cxxopts" "https://github.com/jarro2783/cxxopts.git" "v3.3.1" ""
+            "-DCXXOPTS_BUILD_TESTS=OFF")
 endfunction()
 
 
@@ -254,15 +237,17 @@ function(main)
     run_all_downloads()
 
     # --- Smoke Test: Build all examples ---
-    if (NOT SKIP_EXAMPLES_BUILDING)
+    if (BUILD_EXAMPLES)
+        message(STATUS "Installing examples")
         set(EXAMPLES_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/examples")
-        set(EXAMPLES_BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/external_build/examples")
-        build_cmake_project("examples" "${EXAMPLES_SOURCE_DIR}" "${EXAMPLES_BUILD_DIR}")
+        set(EXAMPLES_BUILD_DIR "${EXTERNAL_BUILD_DIR}/examples")
+        set(EXAMPLES_INSTALL_DIR "${EXTERNAL_INSTALL_DIR}/examples")
+        build_cmake_project("examples" "${EXAMPLES_SOURCE_DIR}" "${EXAMPLES_BUILD_DIR}" "${EXAMPLES_INSTALL_DIR}")
     endif ()
 
     message(STATUS "download_all.cmake scripts completed with options:")
     message(STATUS "  FORCE_REBUILD=${FORCE_REBUILD}")
-    message(STATUS "  SKIP_EXAMPLES_BUILDING=${SKIP_EXAMPLES_BUILDING}")
+    message(STATUS "  BUILD_EXAMPLES=${BUILD_EXAMPLES}")
 
     # Total execution time
     string(TIMESTAMP END_TIME "%s")

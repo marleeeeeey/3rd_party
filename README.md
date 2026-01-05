@@ -21,10 +21,10 @@ Rebuild existing libraries
 cmake -DFORCE_REBUILD=TRUE -P download_all.cmake
 ```
 
-Skip examples building during libraries building
+Build libraries and examples
 
 ```shell
-cmake -DSKIP_EXAMPLES_BUILDING=TRUE -P download_all.cmake
+cmake -DBUILD_EXAMPLES=TRUE -P download_all.cmake
 ```
 
 ### How to use libraries in your project
@@ -39,8 +39,12 @@ target_link_libraries(box2d_minimalProject PRIVATE box2d::box2d)
 
 ### List of CMake packages
 
+- asio
 - box2d
+- cxxopts
+- enet
 - EnTT
+- flatbuffers
 - glm
 - GTest
 - imgui
@@ -49,6 +53,7 @@ target_link_libraries(box2d_minimalProject PRIVATE box2d::box2d)
 - miniaudio
 - nlohmann_json
 - OpenAL
+- openssl
 - SDL3
 - SDL3_image
 - spdlog
