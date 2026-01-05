@@ -21,3 +21,34 @@ add_subdirectory(SDL3)
 add_subdirectory(SDL3_image)
 add_subdirectory(spdlog)
 add_subdirectory(Tracy)
+
+
+add_custom_target(build_all_examples)
+add_dependencies(build_all_examples
+        asio_async_tcp_server_minimalProject
+        asio_async_tcp_client_minimalProject
+        asio_sync_tcp_server_minimalProject
+        asio_sync_tcp_client_minimalProject
+        asio_sync_tcp_and_fb_server_minimalProject
+        asio_sync_tcp_and_fb_client_minimalProject
+        asio_and_open_ssl_async_tcp_server_minimalProject
+        asio_and_open_ssl_async_tcp_client_minimalProject
+        box2d_minimalProject
+        cxxopts_minimalProject
+        enet_server_minimalProject
+        enet_client_minimalProject
+        EnTT_minimalProject
+        flatbuffers_minimalProject
+        glm_minimalProject
+        GTest_minimalProject
+        imgui_minimalProject
+        implot_minimalProject
+        magic_enum_minimalProject
+        miniaudio_minimalProject
+        nlohmann_json_minimalProject
+        OpenAL_minimalProject
+        SDL3_minimalProject
+        SDL3_image_minimalProject
+        spdlog_minimalProject
+        Tracy_minimalProject
+)
