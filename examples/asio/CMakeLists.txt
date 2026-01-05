@@ -8,4 +8,5 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_LIST_DIR}/../../external_install/
 find_package(asio REQUIRED)
 
 add_subdirectory(async_tcp)
+add_subdirectory(async_udp)
 add_subdirectory(sync_tcp)

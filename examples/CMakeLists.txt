@@ -27,6 +27,8 @@ add_custom_target(build_all_examples)
 add_dependencies(build_all_examples
         asio_async_tcp_server_minimalProject
         asio_async_tcp_client_minimalProject
+        asio_async_udp_server_minimalProject
+        asio_async_udp_client_minimalProject
         asio_sync_tcp_server_minimalProject
         asio_sync_tcp_client_minimalProject
         asio_sync_tcp_and_fb_server_minimalProject
