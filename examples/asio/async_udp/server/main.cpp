@@ -3,128 +3,86 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <map>
 
-#define DISABLE_DEBUG_LOG
 #include "../../DebugLog.h"
 
-using asio::ip::tcp;
-
-// Forward declaration
-class ClientSession;
+using asio::ip::udp;
 
 // Represents a chat room for managing client sessions and broadcasting messages.
 // This application has only one room.
 class ChatRoom {
- public:
-  void join(std::shared_ptr<ClientSession> session) {
-    sessions_.insert(session);
-    std::cout << "Client joined. Total clients: " << sessions_.size() << std::endl;
-  }
-
-  void leave(std::shared_ptr<ClientSession> session) {
-    sessions_.erase(session);
-    std::cout << "Client left. Total clients: " << sessions_.size() << std::endl;
-  }
-
-  void deliver(const std::string& msg) {
-    for (auto& session : sessions_) {
-      deliverMessage(session, msg);
+public:
+    void add_participant(const udp::endpoint& endpoint) {
+        participants_.insert(endpoint);
+        if (participants_.size() > last_size_) {
+            std::cout << "New participant: " << endpoint << ". Total: " << participants_.size() << std::endl;
+            last_size_ = participants_.size();
+        }
     }
-  }
 
- private:
-  // Using a helper to trigger the write on the session
-  void deliverMessage(std::shared_ptr<ClientSession> session, const std::string& msg);
+    void deliver(const std::string& msg, udp::socket& socket) {
+        auto msg_ptr = std::make_shared<std::string>(msg);
+        for (const auto& participant : participants_) {
+            socket.async_send_to(asio::buffer(*msg_ptr), participant,
+                [msg_ptr](std::error_code /*ec*/, std::size_t /*bytes*/) {
+                    debugLog() << "Sent message to participant: size=" << msg_ptr->size() << ". Package may be lost." << std::endl;
+                });
+        }
+    }
 
-  std::set<std::shared_ptr<ClientSession>> sessions_;
+private:
+    std::set<udp::endpoint> participants_;
+    size_t last_size_ = 0;
 };
 
-// Represents a single client connection
-class ClientSession : public std::enable_shared_from_this<ClientSession> {
- public:
-  ClientSession(tcp::socket socket, ChatRoom& room)
-      : socket_(std::move(socket)), room_(room) {}
+class AsyncUdpServer {
+public:
+    AsyncUdpServer(asio::io_context& io_context, short port)
+        : socket_(io_context, udp::endpoint(udp::v4(), port)) {
+        doReceive();
+    }
 
-  void start() {
-    room_.join(shared_from_this());
-    doRead();
-  }
+private:
+    void doReceive() {
+        // Wait data from any source
+        socket_.async_receive_from(
+            asio::buffer(data_, max_length), remote_endpoint_,
+            [this](std::error_code ec, std::size_t bytes_recvd) {
+                if (!ec && bytes_recvd > 0) {
+                    // 1. Add a new participant to the room
+                    room_.add_participant(remote_endpoint_);
 
-  void deliver(const std::string& msg) {
-    auto self(shared_from_this());
-    auto msgCopy = std::make_shared<std::string>(msg);
+                    // 2. Broadcast received a message to all participants
+                    std::string msg(data_, bytes_recvd);
+                    std::cout << "Received " << bytes_recvd << " bytes from " << remote_endpoint_ << std::endl;
 
-    asio::async_write(socket_, asio::buffer(*msgCopy),
-                      [self, msgCopy]  // Extent lifetime for self and asio::buffer
-                      (std::error_code ec, std::size_t /*length*/) {
-                        // If error occurs, the session will eventually be dropped by the read loop
-                      });
-  }
+                    room_.deliver(msg, socket_);
 
- private:
-  void doRead() {
-    auto self(shared_from_this());
-    socket_.async_read_some(asio::buffer(data_, max_length),
-                            [this, self]  // Extent lifetime for self
-                            (std::error_code ec, std::size_t length) {
-                              if (!ec) {
-                                std::string msg(data_, length);
-                                std::cout << "Broadcasting: " << msg;
-                                room_.deliver(msg);  // Send to everyone
-                                doRead();            // Wait for next message
-                              } else {
-                                room_.leave(shared_from_this());
-                              }
-                            });
-  }
+                    // 3. Wait for the next message
+                    doReceive();
+                } else {
+                    std::cerr << "Receive error: " << ec.message() << std::endl;
+                    doReceive();
+                }
+            });
+    }
 
-  tcp::socket socket_;
-  ChatRoom& room_;
-
-  enum { max_length = 1024 };
-
-  char data_[max_length];
-};
-
-void ChatRoom::deliverMessage(std::shared_ptr<ClientSession> session, const std::string& msg) {
-  session->deliver(msg);
-}
-
-// Creates one room to place all new clients (connections) to this room.
-class ChatServer {
- public:
-  ChatServer(asio::io_context& io_context, short port)
-      : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
-    doAccept();
-  }
-
- private:
-  void doAccept() {
-    acceptor_.async_accept(
-        [this](std::error_code ec, tcp::socket socket) {
-          if (!ec) {
-            std::cout << "Accepted new connection " << socket.remote_endpoint() << std::endl;
-            std::make_shared<ClientSession>(std::move(socket), room_)->start();
-          }
-          doAccept();
-        });
-  }
-
-  tcp::acceptor acceptor_;
-  ChatRoom room_;
+    udp::socket socket_;
+    udp::endpoint remote_endpoint_;
+    ChatRoom room_;
+    enum { max_length = 1024 };
+    char data_[max_length];
 };
 
 int main() {
-  debugLog() << "Starting server (MAIN THREAD)" << std::endl;
-
-  try {
-    asio::io_context io_context;
-    ChatServer s(io_context, 12345);
-    std::cout << "Async Chat Server started on port 12345..." << std::endl;
-    debugLog() << " ASIO IO context running in MAIN THREAD also" << std::endl;
-    io_context.run();
-  } catch (std::exception& e) {
-    std::cerr << "Exception: " << e.what() << "\n";
-  }
-  return 0;
+    try {
+        asio::io_context io_context;
+        AsyncUdpServer s(io_context, 12345);
+        std::cout << "Async UDP Chat Server started on port 12345..." << std::endl;
+        io_context.run();
+    } catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << "\n";
+    }
+    return 0;
 }
