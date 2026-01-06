@@ -21,7 +21,7 @@ cmake -B cmake-build-release
 Command will generate the file structure mentioned below. Every folder like "asio", "box2d" is CMake package.
 
 ```
-/your/path/to/3rd_party/external_install/Release
+3rd_party/external_install/Release
   /asio
   /box2d
   /cxxopts
@@ -41,6 +41,8 @@ Command will generate the file structure mentioned below. Every folder like "asi
   /SDL3_image
   /spdlog
   /Tracy
+  /uSockets
+  /uWebSockets
 ```
 
 ### How to use libraries in your project

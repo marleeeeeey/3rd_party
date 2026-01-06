@@ -85,10 +85,22 @@ function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR P
         list(APPEND COMMON_ARGS "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}")
     endif()
 
+    # Hack to proceed OpenSSL path to uWebSocket libraries to help find_package()
+    set(OPENSSL_ROOT "${EXTERNAL_INSTALL_DIR}/openssl/x64")
+    if(EXISTS "${OPENSSL_ROOT}")
+        list(APPEND COMMON_ARGS "-DOPENSSL_ROOT_DIR=${OPENSSL_ROOT}")
+    endif()
+
     message(STATUS "Final arguments for ${PROJECT_NAME}:")
     foreach(arg IN LISTS COMMON_ARGS ARGN)
         message(STATUS "  ${arg}")
     endforeach()
+
+    message(STATUS "CMAKE_PREFIX_PATH for ${PROJECT_NAME}:")
+    foreach(path IN LISTS CMAKE_PREFIX_PATH)
+        message(STATUS "  ${path}")
+    endforeach()
+
 
     message(STATUS "Configuring ${PROJECT_NAME} [${CMAKE_BUILD_TYPE}]...")
     execute_process(
@@ -311,6 +323,8 @@ function(ExternalDependencies_download_all)
             "-DFLATBUFFERS_BUILD_TESTS=OFF")
     download_and_install("cxxopts" "https://github.com/jarro2783/cxxopts.git" "v3.3.1" ""
             "-DCXXOPTS_BUILD_TESTS=OFF")
+    download_and_install("uSockets" "https://github.com/uNetworking/uSockets.git" "182b7e4fe7211f98682772be3df89c71dc4884fa" "uSockets_CMakeLists.txt")
+    download_and_install("uWebSockets" "https://github.com/uNetworking/uWebSockets.git" "v20.74.0" "uWebSockets_CMakeLists.txt")
 
     if (BUILD_EXAMPLES)
         message(STATUS "Installing examples")

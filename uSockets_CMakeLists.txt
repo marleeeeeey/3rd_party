@@ -1,0 +1,47 @@
+cmake_minimum_required(VERSION 3.20)
+project(uSockets LANGUAGES C)
+
+# Search dependencies
+find_package(asio REQUIRED)
+find_package(OpenSSL REQUIRED)
+
+# Source files
+file(GLOB SOURCES "src/*.c" "src/crypto/*.c")
+file(GLOB SOURCES_CPP "src/crypto/*.cpp")
+list(APPEND SOURCES_CPP "src/eventing/asio.cpp") # Asio backend
+add_library(uSockets STATIC ${SOURCES} ${SOURCES_CPP})
+
+# Definitions
+target_compile_definitions(uSockets PUBLIC
+    LIBUS_USE_ASIO
+    LIBUS_USE_OPENSSL
+    UWS_USE_ASIO
+    WITH_OPENSSL
+)
+
+# Linkage
+target_link_libraries(uSockets PRIVATE
+    asio::asio
+    OpenSSL::SSL
+    OpenSSL::Crypto
+)
+
+# Headers
+target_include_directories(uSockets PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:include>
+)
+
+# Install rules
+install(TARGETS uSockets EXPORT uSocketsTargets DESTINATION lib)
+install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+install(EXPORT uSocketsTargets NAMESPACE uSockets:: DESTINATION lib/cmake/uSockets)
+
+# Config file for find_package()
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/uSocketsConfig.cmake"
+    "include(CMakeFindDependencyMacro)\n"
+    "find_dependency(asio)\n"
+    "find_dependency(OpenSSL)\n"
+    "include(\"\${CMAKE_CURRENT_LIST_DIR}/uSocketsTargets.cmake\")\n"
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/uSocketsConfig.cmake" DESTINATION lib/cmake/uSockets)
