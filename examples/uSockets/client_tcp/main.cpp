@@ -1,15 +1,16 @@
 // Example copied from: https://github.com/uNetworking/uSockets/blob/master/examples/tcp_load_test.c
 
 #include <libusockets.h>
-constexpr int SSL = 0;
 
 #include <iostream>
 
-std::string request = "Hello there!";
-std::string host;
-int port;
-int connections;
+#define DISABLE_DEBUG_LOG
+#include "../DebugLog.h"
+#include "../Globals.h"
 
+std::string host = "127.0.0.1";
+std::string clientRequestMsg = "Message for ping-pong";
+int numberOfConnections = 200;
 int responses;
 
 /* We don't need any of these */
@@ -32,28 +33,30 @@ us_socket_t* on_tcp_socket_close(us_socket_t* s, int code, void* reason) {
 }
 
 us_socket_t* on_tcp_socket_end(us_socket_t* s) {
-  return us_socket_close(SSL, s, 0, nullptr);
+  return us_socket_close(Globals::sslEnabled, s, 0, nullptr);
 }
 
 us_socket_t* on_tcp_socket_data(us_socket_t* s, char* data, int length) {
-  us_socket_write(SSL, s, request.c_str(), request.size() - 1, 0);
-
+  us_socket_write(Globals::sslEnabled, s, clientRequestMsg.c_str(), clientRequestMsg.size(), 0);
   responses++;
-
   return s;
 }
 
 us_socket_t* on_tcp_socket_open(us_socket_t* s, int is_client, char* ip, int ip_length) {
   /* Send a request */
-  us_socket_write(SSL, s, request.c_str(), request.size() - 1, 0);
+  us_socket_write(Globals::sslEnabled, s, clientRequestMsg.c_str(), clientRequestMsg.size(), 0);
 
-  if (--connections) {
-    us_socket_context_connect(SSL, us_socket_context(SSL, s), host.c_str(), port, nullptr, 0, 0);
+  if (--numberOfConnections) {
+    // Initiate another connection
+    us_socket_context_connect(Globals::sslEnabled, us_socket_context(Globals::sslEnabled, s), host.c_str(), Globals::port, nullptr, 0, 0);
   } else {
-    std::cout << "Running benchmark now..." << std::endl;
+    debugLog() << "All connections established" << std::endl;
+    debugLog() << "Running benchmark now..." << std::endl;
 
-    us_socket_timeout(SSL, s, LIBUS_TIMEOUT_GRANULARITY);
-    us_socket_long_timeout(SSL, s, 1);
+    constexpr int seconds = LIBUS_TIMEOUT_GRANULARITY;  // 4 seconds
+    constexpr int minutes = 1;
+    us_socket_timeout(Globals::sslEnabled, s, seconds);       // Start high-resolution frequency timeout (seconds)
+    us_socket_long_timeout(Globals::sslEnabled, s, minutes);  // Start low-resolution frequency timeout (minutes)
   }
 
   return s;
@@ -61,62 +64,75 @@ us_socket_t* on_tcp_socket_open(us_socket_t* s, int is_client, char* ip, int ip_
 
 us_socket_t* on_tcp_socket_long_timeout(us_socket_t* s) {
   /* Print current statistics */
-  std::cout << "--- Minute mark ---" << std::endl;
-  us_socket_long_timeout(SSL, s, 1);
+  debugLog() << "--- Minute mark ---" << std::endl;
+
+  // Start timeout:
+  constexpr int minutes = 1;
+  us_socket_long_timeout(Globals::sslEnabled, s, minutes);  // Start low-resolution frequency timeout (minutes)
 
   return s;
 }
 
 us_socket_t* on_tcp_socket_timeout(us_socket_t* s) {
   /* Print current statistics */
-  std::cout << "Req/sec: " << (float)responses / LIBUS_TIMEOUT_GRANULARITY << std::endl;
+  constexpr int seconds = LIBUS_TIMEOUT_GRANULARITY;  // 4 seconds
 
-  responses = 0;
-  us_socket_timeout(SSL, s, LIBUS_TIMEOUT_GRANULARITY);
+  debugLog() << "Req/sec: " << (float)responses / seconds << std::endl;  // Show performance metrics
+
+  responses = 0;  // Reset statistics
+
+  us_socket_timeout(Globals::sslEnabled, s, seconds);  // Start high-resolution frequency timeout (seconds)
 
   return s;
 }
 
 us_socket_t* on_tcp_socket_connect_error(us_socket_t* s, int code) {
-  std::cout << "Cannot connect to server" << std::endl;
-
+  debugLog() << "Cannot connect to server" << std::endl;
   return s;
 }
 
 int main() {
-  port = 12345;
-  host = "127.0.0.1";
-  connections = 50;
+  std::cout << "This is client-server benchmark for uSockets (TCP).\n"
+               "1. Client creates "
+            << numberOfConnections
+            << " TCP connections to server.\n"
+               "2. Client and server ping pong messages and calculate "
+               "average throughput in requests per second every 4 seconds. \n"
+               "\n"
+               "* Long timeout equals 1 minute is used for informing only.\n"
+               "** add `#define DISABLE_DEBUG_LOG` to disable debug logging to measure real throughput."
+               "You may use debugger to see how many requests are sent per second."
+            << std::endl;
 
   /* Create the event loop */
   us_loop_t* loop = us_create_loop(nullptr, on_wakeup, on_pre, on_post, 0);
 
   /* Create a socket context for HTTP */
   us_socket_context_options_t options = {};
-  us_socket_context_t* tcp_context = us_create_socket_context(SSL, loop, 0, options);
+  us_socket_context_t* tcp_context = us_create_socket_context(Globals::sslEnabled, loop, 0, options);
 
   if (!tcp_context) {
-    std::cout << "Could not load SSL cert/key" << std::endl;
+    debugLog() << "Could not load SSL cert/key" << std::endl;
     exit(0);
   }
 
   /* Set up event handlers */
-  us_socket_context_on_open(SSL, tcp_context, on_tcp_socket_open);
-  us_socket_context_on_data(SSL, tcp_context, on_tcp_socket_data);
-  us_socket_context_on_writable(SSL, tcp_context, on_tcp_socket_writable);
-  us_socket_context_on_close(SSL, tcp_context, on_tcp_socket_close);
-  us_socket_context_on_timeout(SSL, tcp_context, on_tcp_socket_timeout);
-  us_socket_context_on_long_timeout(SSL, tcp_context, on_tcp_socket_long_timeout);
-  us_socket_context_on_end(SSL, tcp_context, on_tcp_socket_end);
-  us_socket_context_on_connect_error(SSL, tcp_context, on_tcp_socket_connect_error);
+  us_socket_context_on_open(Globals::sslEnabled, tcp_context, on_tcp_socket_open);
+  us_socket_context_on_data(Globals::sslEnabled, tcp_context, on_tcp_socket_data);
+  us_socket_context_on_writable(Globals::sslEnabled, tcp_context, on_tcp_socket_writable);
+  us_socket_context_on_close(Globals::sslEnabled, tcp_context, on_tcp_socket_close);
+  us_socket_context_on_timeout(Globals::sslEnabled, tcp_context, on_tcp_socket_timeout);
+  us_socket_context_on_long_timeout(Globals::sslEnabled, tcp_context, on_tcp_socket_long_timeout);
+  us_socket_context_on_end(Globals::sslEnabled, tcp_context, on_tcp_socket_end);
+  us_socket_context_on_connect_error(Globals::sslEnabled, tcp_context, on_tcp_socket_connect_error);
 
   /* Start making HTTP connections */
-  if (!us_socket_context_connect(SSL, tcp_context, host.c_str(), port, nullptr, 0, 0)) {
-    std::cout << "Cannot connect to server" << std::endl;
+  if (!us_socket_context_connect(Globals::sslEnabled, tcp_context, host.c_str(), Globals::port, nullptr, 0, 0)) {
+    debugLog() << "Cannot connect to server" << std::endl;
   }
 
   us_loop_run(loop);
 
-  us_socket_context_free(SSL, tcp_context);
+  us_socket_context_free(Globals::sslEnabled, tcp_context);
   us_loop_free(loop);
 }

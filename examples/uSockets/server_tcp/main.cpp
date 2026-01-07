@@ -2,10 +2,14 @@
 
 #include <libusockets.h>
 
+#include <cassert>
 #include <iostream>
 #include <string>
 
-constexpr int SSL = 0;
+#define DISABLE_DEBUG_LOG
+#include "../DebugLog.h"
+#include "../Globals.h"
+
 long long int clientCount = 0;
 
 /* We don't need any of these */
@@ -25,7 +29,7 @@ us_socket_t* on_tcp_socket_writable(us_socket_t* s) {
 
 us_socket_t* on_tcp_socket_close(us_socket_t* s, int code, void* reason) {
   clientCount--;
-  std::cout << "Client disconnected. Count=" << clientCount << std::endl;
+  debugLog() << "Client disconnected. Count=" << clientCount << std::endl;
   return s;
 }
 
@@ -36,13 +40,14 @@ us_socket_t* on_tcp_socket_end(us_socket_t* s) {
 }
 
 us_socket_t* on_tcp_socket_data(us_socket_t* s, char* data, int length) {
-  us_socket_write(0, s, "Hello short message!", 20, 0);
+  std::string_view echo(data, length);
+  us_socket_write(0, s, echo.data(), echo.size(), 0);
   return s;
 }
 
 us_socket_t* on_tcp_socket_open(us_socket_t* s, int is_client, char* ip, int ip_length) {
   clientCount++;
-  std::cout << "Client connected. Total=" << clientCount << std::endl;
+  debugLog() << "Client connected. Total=" << clientCount << std::endl;
   return s;
 }
 
@@ -54,31 +59,33 @@ int main() {
   /* Create the event loop */
   us_loop_t* loop = us_create_loop(nullptr, on_wakeup, on_pre, on_post, 0);
 
+  assert(loop);
+
   /* Create a socket context for HTTP */
   us_socket_context_options_t options = {};
 
-  us_socket_context_t* tcp_context = us_create_socket_context(0, loop, 0, options);
+  us_socket_context_t* tcp_context = us_create_socket_context(Globals::sslEnabled, loop, 0, options);
 
   if (!tcp_context) {
-    std::cout << "Could not load SSL cert/key" << std::endl;
+    debugLog() << "Could not load Common::SSL cert/key" << std::endl;
     exit(0);
   }
 
   /* Set up event handlers */
-  us_socket_context_on_open(SSL, tcp_context, on_tcp_socket_open);
-  us_socket_context_on_data(SSL, tcp_context, on_tcp_socket_data);
-  us_socket_context_on_writable(SSL, tcp_context, on_tcp_socket_writable);
-  us_socket_context_on_close(SSL, tcp_context, on_tcp_socket_close);
-  us_socket_context_on_timeout(SSL, tcp_context, on_tcp_socket_timeout);
-  us_socket_context_on_end(SSL, tcp_context, on_tcp_socket_end);
+  us_socket_context_on_open(Globals::sslEnabled, tcp_context, on_tcp_socket_open);
+  us_socket_context_on_data(Globals::sslEnabled, tcp_context, on_tcp_socket_data);
+  us_socket_context_on_writable(Globals::sslEnabled, tcp_context, on_tcp_socket_writable);
+  us_socket_context_on_close(Globals::sslEnabled, tcp_context, on_tcp_socket_close);
+  us_socket_context_on_timeout(Globals::sslEnabled, tcp_context, on_tcp_socket_timeout);
+  us_socket_context_on_end(Globals::sslEnabled, tcp_context, on_tcp_socket_end);
 
   /* Start serving HTTP connections */
-  us_listen_socket_t* listen_socket = us_socket_context_listen(SSL, tcp_context, nullptr, 12345, 0, 0);
+  us_listen_socket_t* listen_socket = us_socket_context_listen(Globals::sslEnabled, tcp_context, nullptr, Globals::port, 0, 0);
 
   if (listen_socket) {
-    std::cout << "Listening on port 12345..." << std::endl;
+    debugLog() << "Listening on port " << Globals::port << std::endl;
     us_loop_run(loop);
   } else {
-    std::cout << "Failed to listen!" << std::endl;
+    debugLog() << "Failed to listen!" << std::endl;
   }
 }
