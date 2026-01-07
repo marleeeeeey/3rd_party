@@ -72,6 +72,8 @@ function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR P
             "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
             "-DCMAKE_INSTALL_PREFIX=${PROJECT_INSTALL_DIR}"
             "-DCMAKE_PREFIX_PATH=${EXTERNAL_INSTALL_DIR}"
+            "-DCMAKE_CXX_STANDARD=17"
+            "-DCMAKE_CXX_STANDARD_REQUIRED=ON"
     )
 
     # Next arguments added if not present. Sometimes it may help to autodetect them
@@ -323,6 +325,9 @@ function(ExternalDependencies_download_all)
             "-DFLATBUFFERS_BUILD_TESTS=OFF")
     download_and_install("cxxopts" "https://github.com/jarro2783/cxxopts.git" "v3.3.1" ""
             "-DCXXOPTS_BUILD_TESTS=OFF")
+    download_and_install("libuv" "https://github.com/libuv/libuv.git" "v1.51.0" ""
+            "-DLIBUV_BUILD_TESTS=OFF"
+            "-DLIBUV_BUILD_SHARED=OFF")
     download_and_install("uSockets" "https://github.com/uNetworking/uSockets.git" "182b7e4fe7211f98682772be3df89c71dc4884fa" "uSockets_CMakeLists.txt")
     download_and_install("uWebSockets" "https://github.com/uNetworking/uWebSockets.git" "v20.74.0" "uWebSockets_CMakeLists.txt")
 

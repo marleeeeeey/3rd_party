@@ -1,27 +1,45 @@
 cmake_minimum_required(VERSION 3.20)
-project(uSockets LANGUAGES C)
+project(uSockets LANGUAGES C CXX)
 
 # Search dependencies
-find_package(asio REQUIRED)
+find_package(libuv REQUIRED)
 find_package(OpenSSL REQUIRED)
 
+if(TARGET libuv::uv_a)
+    set(LIBUV_LIB libuv::uv_a) # Static version
+elseif(TARGET libuv::uv)
+    set(LIBUV_LIB libuv::uv)   # Dinamic version
+elseif(TARGET uv_a)
+    set(LIBUV_LIB uv_a)
+elseif(TARGET uv)
+    set(LIBUV_LIB uv)
+else()
+    message(FATAL_ERROR "Could not find any libuv target (uv, uv_a, libuv::uv, etc.)")
+endif()
+
 # Source files
-file(GLOB SOURCES "src/*.c" "src/crypto/*.c")
-file(GLOB SOURCES_CPP "src/crypto/*.cpp")
-list(APPEND SOURCES_CPP "src/eventing/asio.cpp") # Asio backend
-add_library(uSockets STATIC ${SOURCES} ${SOURCES_CPP})
+add_library(uSockets STATIC
+    src/bsd.c
+    src/context.c
+    src/loop.c
+    src/socket.c
+    src/udp.c
+
+    src/crypto/openssl.c
+    src/crypto/sni_tree.cpp
+
+    src/eventing/libuv.c
+)
 
 # Definitions
 target_compile_definitions(uSockets PUBLIC
-    LIBUS_USE_ASIO
+    LIBUS_USE_LIBUV
     LIBUS_USE_OPENSSL
-    UWS_USE_ASIO
-    WITH_OPENSSL
 )
 
 # Linkage
 target_link_libraries(uSockets PRIVATE
-    asio::asio
+    ${LIBUV_LIB}
     OpenSSL::SSL
     OpenSSL::Crypto
 )
@@ -40,7 +58,7 @@ install(EXPORT uSocketsTargets NAMESPACE uSockets:: DESTINATION lib/cmake/uSocke
 # Config file for find_package()
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/uSocketsConfig.cmake"
     "include(CMakeFindDependencyMacro)\n"
-    "find_dependency(asio)\n"
+    "find_dependency(libuv)\n"
     "find_dependency(OpenSSL)\n"
     "include(\"\${CMAKE_CURRENT_LIST_DIR}/uSocketsTargets.cmake\")\n"
 )
