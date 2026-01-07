@@ -13,29 +13,29 @@ int connections;
 int responses;
 
 /* We don't need any of these */
-void on_wakeup(us_loop_t *loop) {
+void on_wakeup(us_loop_t* loop) {
 }
 
-void on_pre(us_loop_t *loop) {
+void on_pre(us_loop_t* loop) {
 }
 
 /* This is not HTTP POST, it is merely an event emitted post-loop iteration */
-void on_post(us_loop_t *loop) {
+void on_post(us_loop_t* loop) {
 }
 
-us_socket_t *on_tcp_socket_writable(us_socket_t *s) {
+us_socket_t* on_tcp_socket_writable(us_socket_t* s) {
   return s;
 }
 
-us_socket_t *on_tcp_socket_close(us_socket_t *s, int code, void *reason) {
+us_socket_t* on_tcp_socket_close(us_socket_t* s, int code, void* reason) {
   return s;
 }
 
-us_socket_t *on_tcp_socket_end(us_socket_t *s) {
+us_socket_t* on_tcp_socket_end(us_socket_t* s) {
   return us_socket_close(SSL, s, 0, nullptr);
 }
 
-us_socket_t *on_tcp_socket_data(us_socket_t *s, char *data, int length) {
+us_socket_t* on_tcp_socket_data(us_socket_t* s, char* data, int length) {
   us_socket_write(SSL, s, request.c_str(), request.size() - 1, 0);
 
   responses++;
@@ -43,7 +43,7 @@ us_socket_t *on_tcp_socket_data(us_socket_t *s, char *data, int length) {
   return s;
 }
 
-us_socket_t *on_tcp_socket_open(us_socket_t *s, int is_client, char *ip, int ip_length) {
+us_socket_t* on_tcp_socket_open(us_socket_t* s, int is_client, char* ip, int ip_length) {
   /* Send a request */
   us_socket_write(SSL, s, request.c_str(), request.size() - 1, 0);
 
@@ -59,7 +59,7 @@ us_socket_t *on_tcp_socket_open(us_socket_t *s, int is_client, char *ip, int ip_
   return s;
 }
 
-us_socket_t *on_tcp_socket_long_timeout(us_socket_t *s) {
+us_socket_t* on_tcp_socket_long_timeout(us_socket_t* s) {
   /* Print current statistics */
   std::cout << "--- Minute mark ---" << std::endl;
   us_socket_long_timeout(SSL, s, 1);
@@ -67,7 +67,7 @@ us_socket_t *on_tcp_socket_long_timeout(us_socket_t *s) {
   return s;
 }
 
-us_socket_t *on_tcp_socket_timeout(us_socket_t *s) {
+us_socket_t* on_tcp_socket_timeout(us_socket_t* s) {
   /* Print current statistics */
   std::cout << "Req/sec: " << (float)responses / LIBUS_TIMEOUT_GRANULARITY << std::endl;
 
@@ -77,7 +77,7 @@ us_socket_t *on_tcp_socket_timeout(us_socket_t *s) {
   return s;
 }
 
-us_socket_t *on_tcp_socket_connect_error(us_socket_t *s, int code) {
+us_socket_t* on_tcp_socket_connect_error(us_socket_t* s, int code) {
   std::cout << "Cannot connect to server" << std::endl;
 
   return s;
@@ -89,11 +89,11 @@ int main() {
   connections = 50;
 
   /* Create the event loop */
-  us_loop_t *loop = us_create_loop(nullptr, on_wakeup, on_pre, on_post, 0);
+  us_loop_t* loop = us_create_loop(nullptr, on_wakeup, on_pre, on_post, 0);
 
   /* Create a socket context for HTTP */
   us_socket_context_options_t options = {};
-  us_socket_context_t *tcp_context = us_create_socket_context(SSL, loop, 0, options);
+  us_socket_context_t* tcp_context = us_create_socket_context(SSL, loop, 0, options);
 
   if (!tcp_context) {
     std::cout << "Could not load SSL cert/key" << std::endl;
