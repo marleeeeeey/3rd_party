@@ -54,5 +54,6 @@ add_dependencies(build_all_examples
         SDL3_image_minimalProject
         spdlog_minimalProject
         Tracy_minimalProject
-        uSockets_minimalProject
+        uSockets_server_tcp_minimalProject
+        uSockets_client_tcp_minimalProject
 )
