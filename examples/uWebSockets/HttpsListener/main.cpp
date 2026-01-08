@@ -15,6 +15,7 @@ int main() {
       .listen(3000, [](auto* listen_socket) {
         if (listen_socket) {
           std::cout << "Listening on port " << 3000 << std::endl;
+          std::cout << "Run `curl -k https://localhost:3000` to test" << std::endl;
         }
       })
       .run();
