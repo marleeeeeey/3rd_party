@@ -1,2 +1,1 @@
-add_subdirectory(client_tcp)
-add_subdirectory(server_tcp)
+add_subdirectory(tcp_no_ssl)

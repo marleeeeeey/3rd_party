@@ -8,12 +8,17 @@ Run the following command in your terminal (PowerShell) to generate a 2048-bit R
 valid for 365 days:
 
 ```textmate
-& "C:\Program Files\OpenSSL-Win64\bin\openssl.exe" req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -nodes -subj "/CN=localhost"
+$env:OPENSSL_CONF = "$PWD/external_install/Debug/openssl/ssl/openssl.cnf"
+& "external_install/Debug/openssl/x64/bin/openssl.exe" req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -nodes -subj "/CN=localhost"
 ```
 
 **NOTE:** To generate sertificates secured by password, remove the `-nodes` option and use "ssl_context_
-.set_password_callback" to
-set the password from the C++ code.
+.set_password_callback" to set the password from the C++ code.
+
+```textmate
+$env:OPENSSL_CONF = "$PWD/external_install/Debug/openssl/ssl/openssl.cnf"
+& "external_install/Debug/openssl/x64/bin/openssl.exe" req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -subj "/CN=localhost"
+```
 
 #### 2. Server Setup
 

@@ -76,3 +76,37 @@ Please see every example project for more details about the library usage.
 
 - `-DFORCE_REBUILD=TRUE`: Wipe `external_build` and `external_install` and rebuild everything from scratch.
 - `-DBUILD_EXAMPLES=TRUE`: Build smoke tests/examples located in the `examples` folder.
+
+### SSL/TLS Certificates which are used in the example projects
+
+The project uses self-signed certificates for testing purposes. Passphrase is `123Qwe!`.
+
+```shell
+./examples/server.crt
+./examples/server.key
+```
+
+They were generated using the following command:
+
+```shell
+$env:OPENSSL_CONF = "$PWD/external_install/Debug/openssl/ssl/openssl.cnf"
+& "external_install/Debug/openssl/x64/bin/openssl.exe" req -x509 -newkey rsa:2048 -keyout "examples/server.key" -out "examples/server.crt" -days 365 -subj "/CN=localhost"
+```
+
+To copy certificates to the `examples` build folder for specific project, update `CMakeLists.txt`:
+
+```shell
+add_custom_command(TARGET YOUR_PROJECT_NAME_HERE POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../server.crt"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../server.key"
+        $<TARGET_FILE_DIR:YOUR_PROJECT_NAME_HERE>
+        COMMENT "WARNING: Copying tests SSL certificates to output directory"
+)
+```
+
+### Debug SSL/TLS Handshake
+
+```shell
+./external_install/Debug/openssl/x64/bin/openssl.exe s_client -connect 127.0.0.1:12345 -debug -state
+```

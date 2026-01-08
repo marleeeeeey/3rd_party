@@ -4,8 +4,8 @@
 #include <set>
 #include <string>
 
-#define DISABLE_DEBUG_LOG
-#include "../../DebugLog.h"
+#define DEBUG_LOG_DISABLE_DEBUG_LEVEL
+#include "../../../DebugLog.h"
 
 using asio::ip::tcp;
 
