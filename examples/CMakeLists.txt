@@ -22,6 +22,7 @@ add_subdirectory(SDL3_image)
 add_subdirectory(spdlog)
 add_subdirectory(Tracy)
 add_subdirectory(uSockets)
+add_subdirectory(uWebSockets)
 
 
 add_custom_target(build_all_examples)
@@ -56,4 +57,5 @@ add_dependencies(build_all_examples
         Tracy_minimalProject
         uSockets_tcp_no_sll_server_minimalProject
         uSockets_tcp_no_sll_client_minimalProject
+        uWebSockets_hello_world_minimalProject
 )

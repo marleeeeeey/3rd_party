@@ -9,6 +9,11 @@ find_package(uSockets REQUIRED)
 add_library(uWebSockets INTERFACE)
 add_library(uWebSockets::uWebSockets ALIAS uWebSockets)
 
+# Compile definitions
+target_compile_definitions(uWebSockets INTERFACE
+    UWS_NO_ZLIB
+)
+
 # Include directories
 target_include_directories(uWebSockets INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
