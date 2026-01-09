@@ -15,10 +15,11 @@ int main() {
 
   /* Keep in mind that uWS::SSLApp({options}) is the same as uWS::App() when compiled without SSL support.
    * You may swap to using uWS:App() if you don't need SSL */
-  uWS::SSLApp({/* There are example certificates in uWebSockets.js repo */
-            .key_file_name = "server.key",
-            .cert_file_name = "server.crt",
-            .passphrase = "123Qwe!"})
+  uWS::SSLApp(
+      {/* There are example certificates in uWebSockets.js repo */
+       .key_file_name = "server.key",
+       .cert_file_name = "server.crt",
+       .passphrase = "123Qwe!"})
       .ws<PerSocketData>("/*",
                          {/* Settings */
                           .compression = uWS::CompressOptions(uWS::DEDICATED_COMPRESSOR | uWS::DEDICATED_DECOMPRESSOR),
