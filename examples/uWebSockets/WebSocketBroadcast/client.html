@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+<pre id="log"></pre>
+<script>
+    const log = msg => {
+        document.getElementById("log").textContent += msg + "\n";
+    };
+
+    // If you use uWS::SSLApp and have a certificate:
+    const ws = new WebSocket("wss://localhost:9001");
+
+    // If you switched to uWS::App (without SSL):
+    // const ws = new WebSocket("ws://localhost:9001");
+
+    ws.binaryType = "arraybuffer";
+
+    ws.onopen = () => {
+        log("connected");
+        // subscribe("broadcast") is already done on the server in .open,
+        // so there's nothing extra to send here
+    };
+
+    ws.onmessage = event => {
+        if (event.data instanceof ArrayBuffer) {
+            const view = new DataView(event.data);
+            // the server sends int64 millis
+            const hi = view.getUint32(0, true);
+            const lo = view.getUint32(4, true);
+            const millis = hi + lo * 2 ** 32;
+            log("timestamp: " + millis);
+        } else {
+            log("text: " + event.data);
+        }
+    };
+
+    ws.onclose = () => log("closed");
+    ws.onerror = e => log("error");
+</script>
+</body>
+</html>

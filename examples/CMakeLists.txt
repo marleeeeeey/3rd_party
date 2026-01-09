@@ -59,4 +59,5 @@ add_dependencies(build_all_examples
         uSockets_tcp_no_sll_client_minimalProject
         uWebSockets_HttpsListener_minimalProject
         uWebSockets_EchoServer_minimalProject
+        uWebSockets_Broadcast_minimalProject
 )
