@@ -140,11 +140,32 @@ function(generate_test_certificates)
     set(CERT_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/examples")
     set(SERVER_CRT "${CERT_OUT_DIR}/server.crt")
     set(SERVER_KEY "${CERT_OUT_DIR}/server.key")
+    set(LOCAL_OPENSSL_CONF "${CERT_OUT_DIR}/openssl-localhost.cnf")
 
     if (NOT EXISTS "${SERVER_CRT}" OR NOT EXISTS "${SERVER_KEY}")
         message(STATUS "Generating self-signed certificates for local testing...")
 
         file(MAKE_DIRECTORY "${CERT_OUT_DIR}")
+
+        # Create local config with SAN=localhost
+        file(WRITE "${LOCAL_OPENSSL_CONF}" "
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+x509_extensions    = v3_req
+prompt             = no
+
+[ req_distinguished_name ]
+CN = localhost
+
+[ v3_req ]
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = localhost
+")
 
         execute_process(
                 COMMAND "${OPENSSL_EXE}" req -x509 -newkey rsa:2048
@@ -152,8 +173,8 @@ function(generate_test_certificates)
                 -out "${SERVER_CRT}"
                 -days 365
                 -passout "pass:123Qwe!"
-                -subj "/CN=localhost"
-                -config "${OPENSSL_CONF}"
+                -config "${LOCAL_OPENSSL_CONF}"
+                -sha256
                 RESULT_VARIABLE cert_gen_result
                 COMMAND_ERROR_IS_FATAL ANY
         )
@@ -167,6 +188,7 @@ function(generate_test_certificates)
         message(STATUS "Certificates already exist in ${CERT_OUT_DIR}, skipping generation.")
     endif ()
 endfunction()
+
 
 
 function(download_and_install_openssl)

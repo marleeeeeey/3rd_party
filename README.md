@@ -112,6 +112,14 @@ add_custom_command(TARGET YOUR_PROJECT_NAME_HERE POST_BUILD
 
 Please make shure that you use a relative path from the `CMAKE_CURRENT_SOURCE_DIR` variable.
 
+### Install test certificate on Windows (optional)
+
+To prevent certificate warnings in your browser and issues with TLS handshake, you need to trust the certificate. The easiest way is to
+follow these steps:
+
+1. Double-click on `examples/server.crt` and install it in the `Trusted Root Certification Authorities` store.
+2. Restart your browsers.
+
 ### Debug SSL/TLS Handshake
 
 ```shell
