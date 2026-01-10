@@ -134,6 +134,41 @@ function(build_cmake_project PROJECT_NAME PROJECT_SOURCE_DIR PROJECT_BUILD_DIR P
 endfunction()
 
 
+function(generate_test_certificates)
+    set(OPENSSL_EXE "${CMAKE_CURRENT_SOURCE_DIR}/external_install/${CMAKE_BUILD_TYPE}/openssl/x64/bin/openssl.exe")
+    set(OPENSSL_CONF "${CMAKE_CURRENT_SOURCE_DIR}/external_install/${CMAKE_BUILD_TYPE}/openssl/ssl/openssl.cnf")
+    set(CERT_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/examples")
+    set(SERVER_CRT "${CERT_OUT_DIR}/server.crt")
+    set(SERVER_KEY "${CERT_OUT_DIR}/server.key")
+
+    if (NOT EXISTS "${SERVER_CRT}" OR NOT EXISTS "${SERVER_KEY}")
+        message(STATUS "Generating self-signed certificates for local testing...")
+
+        file(MAKE_DIRECTORY "${CERT_OUT_DIR}")
+
+        execute_process(
+                COMMAND "${OPENSSL_EXE}" req -x509 -newkey rsa:2048
+                -keyout "${SERVER_KEY}"
+                -out "${SERVER_CRT}"
+                -days 365
+                -passout "pass:123Qwe!"
+                -subj "/CN=localhost"
+                -config "${OPENSSL_CONF}"
+                RESULT_VARIABLE cert_gen_result
+                COMMAND_ERROR_IS_FATAL ANY
+        )
+
+        if (cert_gen_result EQUAL 0)
+            message(STATUS "Successfully generated: ${SERVER_CRT}")
+        else ()
+            message(WARNING "Failed to generate certificates. OpenSSL exit code: ${cert_gen_result}")
+        endif ()
+    else ()
+        message(STATUS "Certificates already exist in ${CERT_OUT_DIR}, skipping generation.")
+    endif ()
+endfunction()
+
+
 function(download_and_install_openssl)
     message("")
     message("")
@@ -289,6 +324,7 @@ endfunction()
 
 function(ExternalDependencies_download_all)
     download_and_install_openssl()
+    generate_test_certificates()
     download_and_install("box2d" "https://github.com/erincatto/box2d.git" "v3.1.1" "")
     download_and_install("EnTT" "https://github.com/skypjack/entt.git" "v3.16.0" ""
             "-DENTT_INSTALL=ON")

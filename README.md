@@ -79,21 +79,26 @@ Please see every example project for more details about the library usage.
 
 ### SSL/TLS Certificates which are used in the example projects
 
-The project uses self-signed certificates for testing purposes. Passphrase is `123Qwe!`.
+The project uses self-signed certificate for testing purposes. Passphrase is `123Qwe!`.
 
 ```shell
 ./examples/server.crt
 ./examples/server.key
 ```
 
-They were generated using the following command:
+Certificate is generated in the `examples` folder by CMake configure step. See method `generate_test_certificates` in
+`ExternalDependencies.cmake`.
+
+Later this certificate is used in the example projects by copying them to the output folder.
+
+Equivalent command to generate certificates on Windows (powershell):
 
 ```shell
 $env:OPENSSL_CONF = "$PWD/external_install/Debug/openssl/ssl/openssl.cnf"
 & "external_install/Debug/openssl/x64/bin/openssl.exe" req -x509 -newkey rsa:2048 -keyout "examples/server.key" -out "examples/server.crt" -days 365 -subj "/CN=localhost"
 ```
 
-To copy certificates to the `examples` build folder for specific project, update `CMakeLists.txt`:
+To copy certificates to the `examples` build folder for a specific project, update `CMakeLists.txt`:
 
 ```shell
 add_custom_command(TARGET YOUR_PROJECT_NAME_HERE POST_BUILD
@@ -104,6 +109,8 @@ add_custom_command(TARGET YOUR_PROJECT_NAME_HERE POST_BUILD
         COMMENT "WARNING: Copying tests SSL certificates to output directory"
 )
 ```
+
+Please make shure that you use a relative path from the `CMAKE_CURRENT_SOURCE_DIR` variable.
 
 ### Debug SSL/TLS Handshake
 
