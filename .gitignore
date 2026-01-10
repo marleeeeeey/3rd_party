@@ -2,3 +2,5 @@
 /external_install/
 /external_source/
 /**/.*/
+/examples/server.crt
+/examples/server.key
