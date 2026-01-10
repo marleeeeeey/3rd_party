@@ -1,3 +1,4 @@
 add_subdirectory(HttpsListener)
 add_subdirectory(WebSocketEchoServer)
 add_subdirectory(WebSocketBroadcast)
+add_subdirectory(WS_BroadcastingEchoServer)
