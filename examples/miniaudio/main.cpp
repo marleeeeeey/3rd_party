@@ -3,7 +3,7 @@
 #include <iostream>
 #include <thread>
 
-#include "miniaudio/miniaudio.h"
+#include "miniaudio.h"
 
 auto filepath1 = "C:\\Users\\marle\\OneDrive\\storage_public\\music\\Pop\\1969 - Elton John\\1969 - Empty Sky\\01. Empty Sky.mp3";
 auto filepath2 = "C:\\Users\\marle\\OneDrive\\storage_public\\music\\Psychedelic Rock\\1967 - Jimi Hendrix\\1967 - Are You Experienced\\01. Purple Haze.flac";

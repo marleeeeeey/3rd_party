@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.20)
 project(uSockets LANGUAGES C CXX)
 
 # Search dependencies
-find_package(libuv REQUIRED)
+if(NOT TARGET uv)
+    find_package(libuv REQUIRED)
+endif()
 find_package(OpenSSL REQUIRED)
 
 if(TARGET libuv::uv_a)
@@ -30,6 +32,7 @@ add_library(uSockets STATIC
 
     src/eventing/libuv.c
 )
+add_library(uSockets::uSockets ALIAS uSockets)
 
 # Definitions
 target_compile_definitions(uSockets PUBLIC
@@ -49,17 +52,3 @@ target_include_directories(uSockets PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
-
-# Install rules
-install(TARGETS uSockets EXPORT uSocketsTargets DESTINATION lib)
-install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
-install(EXPORT uSocketsTargets NAMESPACE uSockets:: DESTINATION lib/cmake/uSockets)
-
-# Config file for find_package()
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/uSocketsConfig.cmake"
-    "include(CMakeFindDependencyMacro)\n"
-    "find_dependency(libuv)\n"
-    "find_dependency(OpenSSL)\n"
-    "include(\"\${CMAKE_CURRENT_LIST_DIR}/uSocketsTargets.cmake\")\n"
-)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/uSocketsConfig.cmake" DESTINATION lib/cmake/uSockets)

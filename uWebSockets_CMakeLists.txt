@@ -3,7 +3,9 @@ project(uWebSockets LANGUAGES CXX)
 
 # Search dependencies
 find_package(OpenSSL REQUIRED)
-find_package(uSockets REQUIRED)
+if(NOT TARGET uSockets)
+    find_package(uSockets REQUIRED)
+endif()
 
 # Header-only library
 add_library(uWebSockets INTERFACE)
@@ -26,16 +28,3 @@ target_link_libraries(uWebSockets INTERFACE
     OpenSSL::SSL
     OpenSSL::Crypto
 )
-
-# Install rules
-install(TARGETS uWebSockets EXPORT uWebSocketsTargets)
-install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
-install(EXPORT uWebSocketsTargets NAMESPACE uWebSockets:: DESTINATION lib/cmake/uWebSockets)
-
-# Config file for find_package()
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/uWebSocketsConfig.cmake"
-    "include(CMakeFindDependencyMacro)\n"
-    "find_dependency(uSockets)\n"
-    "include(\"\${CMAKE_CURRENT_LIST_DIR}/uWebSocketsTargets.cmake\")\n"
-)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/uWebSocketsConfig.cmake" DESTINATION lib/cmake/uWebSockets)

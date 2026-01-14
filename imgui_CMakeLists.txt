@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(imgui VERSION 1.92.5)
 
-# This is what imgui sees when building itself. It expects SDL3 to be installed in the system.
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external_install/SDL3")
-
 set(IMGUI_SOURCES
     imgui.cpp
     imgui_demo.cpp
@@ -15,6 +12,7 @@ set(IMGUI_SOURCES
 )
 
 add_library(imgui STATIC ${IMGUI_SOURCES})
+add_library(imgui::imgui ALIAS imgui)
 
 target_include_directories(imgui PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -23,60 +21,8 @@ target_include_directories(imgui PUBLIC
     $<INSTALL_INTERFACE:include/imgui>
 )
 
-find_package(SDL3 REQUIRED)
+if(NOT TARGET SDL3::SDL3)
+    find_package(SDL3 REQUIRED)
+endif()
 
 target_link_libraries(imgui PUBLIC SDL3::SDL3)
-
-# --- Export and Install ---
-
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
-
-set(IMGUI_INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/imgui)
-
-install(TARGETS imgui
-    EXPORT imguiTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-install(FILES
-    imconfig.h
-    imgui.h
-    imgui_internal.h
-    imstb_rectpack.h
-    imstb_textedit.h
-    imstb_truetype.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/imgui)
-
-install(FILES 
-    backends/imgui_impl_sdl3.h
-    backends/imgui_impl_sdlrenderer3.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/imgui)
-
-install(EXPORT imguiTargets
-    FILE imguiTargets.cmake
-    NAMESPACE imgui::
-    DESTINATION ${IMGUI_INSTALL_CONFIGDIR}
-)
-
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/imguiConfigVersion.cmake"
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY AnyNewerVersion
-)
-
-# This is what other projects will see after installation
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/imguiConfig.cmake"
-"include(CMakeFindDependencyMacro)
-list(APPEND CMAKE_PREFIX_PATH \"\${CMAKE_CURRENT_LIST_DIR}/../../../SDL3\")
-find_dependency(SDL3)
-include(\"\${CMAKE_CURRENT_LIST_DIR}/imguiTargets.cmake\")
-")
-
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/imguiConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/imguiConfigVersion.cmake"
-    DESTINATION ${IMGUI_INSTALL_CONFIGDIR}
-)

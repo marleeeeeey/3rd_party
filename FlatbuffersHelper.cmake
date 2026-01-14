@@ -1,13 +1,9 @@
 # Helper function to compile FlatBuffers schemas and create interface targets
 # This file can be included in any CMake project
 
-# Find flatc compiler if not already found
-if (NOT FLATC_EXECUTABLE)
-    set(FLATC_PATH "${CMAKE_CURRENT_LIST_DIR}/external_install/${CMAKE_BUILD_TYPE}/flatbuffers/bin")
-    find_program(FLATC_EXECUTABLE flatc PATHS ${FLATC_PATH})
-    if (NOT FLATC_EXECUTABLE)
-        message(FATAL_ERROR "flatc not found in ${FLATC_PATH}")
-    endif ()
+# Find flatc compiler target
+if (NOT TARGET flatc)
+    message(FATAL_ERROR "Flatbuffers target 'flatc' not found. Ensure flatbuffers is added via FetchContent.")
 endif ()
 
 # Function to compile FlatBuffers schema and create a logical target
@@ -35,8 +31,8 @@ function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
     # Define the generation rule
     add_custom_command(
             OUTPUT "${GENERATED_HEADER}"
-            COMMAND ${FLATC_EXECUTABLE} --cpp -o "${FB_GEN_DIR}" "${SCHEMA_PATH}"
-            DEPENDS "${SCHEMA_PATH}"
+            COMMAND flatc --cpp -o "${FB_GEN_DIR}" "${SCHEMA_PATH}"
+            DEPENDS "${SCHEMA_PATH}" flatc
             COMMENT "Compiling FlatBuffers schema: ${SCHEMA_PATH} to ${GENERATED_HEADER}"
             VERBATIM
     )
@@ -56,6 +52,6 @@ function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
     # Set include directories for the target
     target_include_directories(${TARGET_NAME} INTERFACE "${FB_GEN_DIR}")
 
-    # Link mandatory flatbuffers headers (assumes flatbuffers::flatbuffers target exists)
-    target_link_libraries(${TARGET_NAME} INTERFACE flatbuffers::flatbuffers)
+    # Link mandatory flatbuffers headers (assumes flatbuffers target exists)
+    target_link_libraries(${TARGET_NAME} INTERFACE flatbuffers)
 endfunction()
