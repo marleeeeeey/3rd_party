@@ -137,9 +137,9 @@ foreach (lib IN LISTS PATCHED_LIBS)
         set(SRC_DIR "${${lib_lc}_SOURCE_DIR}")
         set(BIN_DIR "${${lib_lc}_BINARY_DIR}")
 
-        if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${lib}_CMakeLists.txt")
+        if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_${lib}.txt")
             message(STATUS "Patching ${lib} in ${SRC_DIR}")
-            configure_file("${CMAKE_CURRENT_SOURCE_DIR}/${lib}_CMakeLists.txt"
+            configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_${lib}.txt"
                     "${SRC_DIR}/CMakeLists.txt" COPYONLY)
         endif ()
 
