@@ -21,19 +21,23 @@ include(FetchContent)
 
 # --- 0. Download precompiled OpenSSL for Windows ---
 
-FetchContent_Declare(
-        openssl_bin
-        URL "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-3.6.0.zip"
-        URL_HASH SHA256=c1c831e8bcce7d6c204d6813aafb87c0d44dd88841ab31105185b55cdec1d759
-)
-FetchContent_MakeAvailable(openssl_bin)
+if (WIN32)
+    FetchContent_Declare(
+            openssl_bin
+            URL "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-3.6.0.zip"
+            URL_HASH SHA256=c1c831e8bcce7d6c204d6813aafb87c0d44dd88841ab31105185b55cdec1d759
+    )
+    FetchContent_MakeAvailable(openssl_bin)
 
-# Retrieve path to unpacked achive
-FetchContent_GetProperties(openssl_bin SOURCE_DIR OPENSSL_UNPACK_DIR)
+    # Retrieve path to unpacked achive
+    FetchContent_GetProperties(openssl_bin SOURCE_DIR OPENSSL_UNPACK_DIR)
 
-# Add x64 to the path for Windows binaries
-list(APPEND CMAKE_PREFIX_PATH "${OPENSSL_UNPACK_DIR}/x64")
+    # Add x64 to the path for Windows binaries
+    list(APPEND CMAKE_PREFIX_PATH "${OPENSSL_UNPACK_DIR}/x64")
+endif ()
 
+# This will find system OpenSSL on Linux (libssl-dev)
+# and the downloaded one on Windows
 find_package(OpenSSL REQUIRED)
 message(STATUS "OpenSSL found at: ${OPENSSL_INCLUDE_DIR}")
 
