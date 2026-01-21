@@ -26,6 +26,9 @@ jobs:
       - name: Install Clang
         run: curl -fsSL -o LLVM${{ matrix.version }}.exe https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ matrix.version }}/LLVM-${{ matrix.version }}-win64.exe ; 7z x LLVM${{ matrix.version }}.exe -y -o"C:/Program Files/LLVM"
       - name: Run CMake
-        run: cmake -S . -B build -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang++.exe"
+        run: cmake -S . -B build ^
+          -G "Ninja" ^
+          -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang.exe" ^
+          -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang++.exe"
       - name: Build
         run: cmake --build build --parallel 10
