@@ -39,6 +39,7 @@ add_dependencies(build_all_examples
         asio_and_open_ssl_async_tcp_client_minimalProject
         box2d_minimalProject
         cxxopts_minimalProject
+        cxxopts_dump_options_to_file
         enet_server_minimalProject
         enet_client_minimalProject
         EnTT_minimalProject

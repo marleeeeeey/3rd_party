@@ -9,7 +9,11 @@ project(3rd_party_libraries C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# ---------------------------------------------------
+
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Disable shared globally
+
+# ---------------------------------------------------
 
 include(FetchContent)
 
