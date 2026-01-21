@@ -10,13 +10,18 @@ function(generate_test_certificates)
         set(OPENSSL_EXE "${OPENSSL_EXECUTABLE}")
     endif ()
 
+    # 2.1. On Linux/macOS try to search OpenSSL binary in system
+    if (NOT OPENSSL_EXE)
+        find_program(OPENSSL_EXE openssl)
+    endif ()
+
     # 3. Still not found? Try to find manually in unpack folder
     if (NOT OPENSSL_EXE AND OPENSSL_UNPACK_DIR)
         find_program(OPENSSL_EXE openssl PATHS "${OPENSSL_UNPACK_DIR}/x64/bin" NO_DEFAULT_PATH)
     endif ()
 
     if (NOT OPENSSL_EXE)
-        message(WARNING "OpenSSL executable not found. Cannot generate certificates. (OPENSSL_UNPACK_DIR=${OPENSSL_UNPACK_DIR})")
+        message(FATAL_ERROR "OpenSSL executable not found. Cannot generate certificates. (OPENSSL_UNPACK_DIR=${OPENSSL_UNPACK_DIR})")
         return()
     endif ()
 
