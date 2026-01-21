@@ -28,7 +28,7 @@ jobs:
       - name: Get latest CMake and ninja
         uses: lukka/get-cmake@9e07ecdcee1b12e5037e42f410b67f03e2f626e1 # v4.2.1
       - name: Run CMake
-        run: cmake -S . -B build
+        run: cmake -S . -B build -D3RD_PARTY_BUILD_EXAMPLES=ON
       - name: Build
         run: cmake --build build
 
@@ -46,6 +46,10 @@ jobs:
       - name: Get latest CMake and ninja
         uses: lukka/get-cmake@9e07ecdcee1b12e5037e42f410b67f03e2f626e1 # v4.2.1
       - name: Run CMake
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake -GNinja
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+            -GNinja \
+            -D3RD_PARTY_BUILD_EXAMPLES=ON
       - name: Build
         run: cmake --build build
