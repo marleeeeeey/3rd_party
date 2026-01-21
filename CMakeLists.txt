@@ -7,11 +7,13 @@ endif ()
 
 project(3rd_party_libraries C CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 23 CACHE STRING "C++ standard to use")
+endif ()
 
 # ---------------------------------------------------
 
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Disable shared globally
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable shared globally for WASM mostly")
 
 # ---------------------------------------------------
 
@@ -65,45 +67,45 @@ generate_test_certificates()
 FetchContent_Declare(box2d GIT_REPOSITORY https://github.com/erincatto/box2d.git GIT_TAG v3.1.1)
 
 FetchContent_Declare(entt GIT_REPOSITORY https://github.com/skypjack/entt.git GIT_TAG v3.16.0)
-set(ENTT_INSTALL ON CACHE INTERNAL "")
+set(ENTT_INSTALL ON CACHE BOOL "")
 
 FetchContent_Declare(nlohmann_json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG v3.12.0)
-set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_BuildTests OFF CACHE BOOL "")
 
 FetchContent_Declare(SDL3 GIT_REPOSITORY https://github.com/libsdl-org/SDL.git GIT_TAG release-3.2.28)
 
 FetchContent_Declare(SDL3_image GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git GIT_TAG release-3.2.4)
-set(SDLIMAGE_AVIF OFF CACHE INTERNAL "")
+set(SDLIMAGE_AVIF OFF CACHE BOOL "")
 
 FetchContent_Declare(spdlog GIT_REPOSITORY https://github.com/gabime/spdlog.git GIT_TAG v1.16.0)
 
 FetchContent_Declare(glm GIT_REPOSITORY https://github.com/g-truc/glm.git GIT_TAG 1.0.2)
-set(GLM_BUILD_LIBRARY OFF CACHE BOOL "Build glm library" FORCE)
-set(GLM_BUILD_TESTS OFF CACHE BOOL "Build glm tests" FORCE)
-set(GLM_INSTALL OFF CACHE BOOL "Install glm" FORCE)
+set(GLM_BUILD_LIBRARY OFF CACHE BOOL "")
+set(GLM_BUILD_TESTS OFF CACHE BOOL "")
+set(GLM_INSTALL OFF CACHE BOOL "")
 
 FetchContent_Declare(magic_enum GIT_REPOSITORY https://github.com/Neargye/magic_enum.git GIT_TAG v0.9.7)
-set(MAGIC_ENUM_OPT_BUILD_EXAMPLES OFF CACHE INTERNAL "")
-set(MAGIC_ENUM_OPT_BUILD_TESTS OFF CACHE INTERNAL "")
+set(MAGIC_ENUM_OPT_BUILD_EXAMPLES OFF CACHE BOOL "")
+set(MAGIC_ENUM_OPT_BUILD_TESTS OFF CACHE BOOL "")
 
 FetchContent_Declare(googletest GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG v1.17.0)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE) # For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "Prevent overriding the parent project's settings (Windows)")
 
 FetchContent_Declare(openal-soft GIT_REPOSITORY https://github.com/kcat/openal-soft.git GIT_TAG 1.25.0)
-set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "")
-set(ALSOFT_TESTS OFF CACHE INTERNAL "")
+set(ALSOFT_EXAMPLES OFF CACHE BOOL "")
+set(ALSOFT_TESTS OFF CACHE BOOL "")
 
 FetchContent_Declare(tracy GIT_REPOSITORY https://github.com/wolfpld/tracy.git GIT_TAG v0.13.1)
 
 FetchContent_Declare(flatbuffers GIT_REPOSITORY https://github.com/google/flatbuffers.git GIT_TAG v25.12.19)
-set(FLATBUFFERS_BUILD_TESTS OFF CACHE INTERNAL "")
+set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
 
 FetchContent_Declare(cxxopts GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git GIT_TAG v3.3.1)
-set(CXXOPTS_BUILD_TESTS OFF CACHE INTERNAL "")
+set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "")
 
 FetchContent_Declare(libuv GIT_REPOSITORY https://github.com/libuv/libuv.git GIT_TAG v1.51.0)
-set(LIBUV_BUILD_TESTS OFF CACHE INTERNAL "")
-set(LIBUV_BUILD_SHARED ON CACHE INTERNAL "")
+set(LIBUV_BUILD_TESTS OFF CACHE BOOL "")
+set(LIBUV_BUILD_SHARED ON CACHE BOOL "")
 
 # Make standard libs available. They are not required any patches
 FetchContent_MakeAvailable(
@@ -165,6 +167,7 @@ if (NOT miniaudio_POPULATED)
 endif ()
 
 # --- Add examples ---
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/CMakeLists.txt")
+set(3RD_PARTY_BUILD_EXAMPLES OFF CACHE BOOL "Build integrated examples. It produce a lot of CMake targets of example projects")
+if (3RD_PARTY_BUILD_EXAMPLES AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/CMakeLists.txt")
     add_subdirectory(examples)
 endif ()
