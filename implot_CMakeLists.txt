@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-project(implot VERSION 1.92.5)
+project(implot)
 
-set(IMPLOT_SOURCES
+add_library(implot STATIC
     implot.cpp
     implot_demo.cpp
     implot_items.cpp
 )
-
-add_library(implot STATIC ${IMPLOT_SOURCES})
 add_library(implot::implot ALIAS implot)
 
 target_include_directories(implot PUBLIC
@@ -21,3 +19,12 @@ if(NOT TARGET imgui::imgui)
 endif()
 
 target_link_libraries(implot PUBLIC imgui::imgui)
+
+include(${CMAKE_SOURCE_DIR}/InstallHelper.cmake)
+setup_install_rules(
+    TARGET implot
+    NAMESPACE implot
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
+    INCLUDE_SUBDIR "implot"
+    CONFIG_FILE_EXTRA_CONTENT "find_dependency(imgui)"
+)

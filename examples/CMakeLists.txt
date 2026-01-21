@@ -44,7 +44,7 @@ add_dependencies(build_all_examples
         EnTT_minimalProject
         flatbuffers_minimalProject
         glm_minimalProject
-        #        GTest_minimalProject # TODO fix linker issue later: lld-link: error: undefined symbol: class testing::internal::Mutex testing::internal::g_gmock_mutex
+        GTest_minimalProject
         imgui_minimalProject
         implot_minimalProject
         magic_enum_minimalProject

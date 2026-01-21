@@ -9,22 +9,12 @@ project(3rd_party_libraries C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Disable shared globally
+
 include(FetchContent)
 
-# --- Options ---
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-set(ENTT_INSTALL ON CACHE INTERNAL "")
-set(SDLIMAGE_AVIF OFF CACHE INTERNAL "")
-set(MAGIC_ENUM_OPT_BUILD_EXAMPLES OFF CACHE INTERNAL "")
-set(MAGIC_ENUM_OPT_BUILD_TESTS OFF CACHE INTERNAL "")
-set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "")
-set(ALSOFT_TESTS OFF CACHE INTERNAL "")
-set(FLATBUFFERS_BUILD_TESTS OFF CACHE INTERNAL "")
-set(CXXOPTS_BUILD_TESTS OFF CACHE INTERNAL "")
-set(LIBUV_BUILD_TESTS OFF CACHE INTERNAL "")
-set(LIBUV_BUILD_SHARED ON CACHE INTERNAL "")
+# --- 0. Download precompiled OpenSSL for Windows ---
 
-# Download precompiled OpenSSL for Windows
 FetchContent_Declare(
         openssl_bin
         URL "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-3.6.0.zip"
@@ -41,6 +31,27 @@ list(APPEND CMAKE_PREFIX_PATH "${OPENSSL_UNPACK_DIR}/x64")
 find_package(OpenSSL REQUIRED)
 message(STATUS "OpenSSL found at: ${OPENSSL_INCLUDE_DIR}")
 
+# --- Install rules for precompiled OpenSSL ---
+if (WIN32)
+    # Install Headers
+    install(DIRECTORY "${OPENSSL_INCLUDE_DIR}/openssl"
+            DESTINATION include
+            FILES_MATCHING PATTERN "*.h")
+
+    # Install Libraries (.lib files for linking)
+    install(FILES "${OPENSSL_CRYPTO_LIBRARY}" "${OPENSSL_SSL_LIBRARY}"
+            DESTINATION lib)
+
+    # Install DLLs (if they exist in the same bin folder as the zip structure)
+    # Usually they are in the 'bin' or 'x64' folder of the unpacked archive
+    get_filename_component(OPENSSL_BIN_DIR "${OPENSSL_INCLUDE_DIR}/../bin" ABSOLUTE)
+    if (EXISTS "${OPENSSL_BIN_DIR}")
+        install(DIRECTORY "${OPENSSL_BIN_DIR}/"
+                DESTINATION bin
+                FILES_MATCHING PATTERN "*.dll")
+    endif ()
+endif ()
+
 # Include helper and generate certificates
 include(CertificateHelper.cmake)
 generate_test_certificates()
@@ -48,19 +59,47 @@ generate_test_certificates()
 # --- 1. Standard libs (FetchContent_MakeAvailable) ---
 
 FetchContent_Declare(box2d GIT_REPOSITORY https://github.com/erincatto/box2d.git GIT_TAG v3.1.1)
+
 FetchContent_Declare(entt GIT_REPOSITORY https://github.com/skypjack/entt.git GIT_TAG v3.16.0)
+set(ENTT_INSTALL ON CACHE INTERNAL "")
+
 FetchContent_Declare(nlohmann_json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG v3.12.0)
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+
 FetchContent_Declare(SDL3 GIT_REPOSITORY https://github.com/libsdl-org/SDL.git GIT_TAG release-3.2.28)
+
 FetchContent_Declare(SDL3_image GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git GIT_TAG release-3.2.4)
+set(SDLIMAGE_AVIF OFF CACHE INTERNAL "")
+
 FetchContent_Declare(spdlog GIT_REPOSITORY https://github.com/gabime/spdlog.git GIT_TAG v1.16.0)
+
 FetchContent_Declare(glm GIT_REPOSITORY https://github.com/g-truc/glm.git GIT_TAG 1.0.2)
+set(GLM_BUILD_LIBRARY OFF CACHE BOOL "Build glm library" FORCE)
+set(GLM_BUILD_TESTS OFF CACHE BOOL "Build glm tests" FORCE)
+set(GLM_INSTALL OFF CACHE BOOL "Install glm" FORCE)
+
 FetchContent_Declare(magic_enum GIT_REPOSITORY https://github.com/Neargye/magic_enum.git GIT_TAG v0.9.7)
+set(MAGIC_ENUM_OPT_BUILD_EXAMPLES OFF CACHE INTERNAL "")
+set(MAGIC_ENUM_OPT_BUILD_TESTS OFF CACHE INTERNAL "")
+
 FetchContent_Declare(googletest GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG v1.17.0)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE) # For Windows: Prevent overriding the parent project's compiler/linker settings
+
 FetchContent_Declare(openal-soft GIT_REPOSITORY https://github.com/kcat/openal-soft.git GIT_TAG 1.25.0)
+set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "")
+set(ALSOFT_TESTS OFF CACHE INTERNAL "")
+
 FetchContent_Declare(tracy GIT_REPOSITORY https://github.com/wolfpld/tracy.git GIT_TAG v0.13.1)
+
 FetchContent_Declare(flatbuffers GIT_REPOSITORY https://github.com/google/flatbuffers.git GIT_TAG v25.12.19)
+set(FLATBUFFERS_BUILD_TESTS OFF CACHE INTERNAL "")
+
 FetchContent_Declare(cxxopts GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git GIT_TAG v3.3.1)
+set(CXXOPTS_BUILD_TESTS OFF CACHE INTERNAL "")
+
 FetchContent_Declare(libuv GIT_REPOSITORY https://github.com/libuv/libuv.git GIT_TAG v1.51.0)
+set(LIBUV_BUILD_TESTS OFF CACHE INTERNAL "")
+set(LIBUV_BUILD_SHARED ON CACHE INTERNAL "")
 
 # Make standard libs available. They are not required any patches
 FetchContent_MakeAvailable(
@@ -109,16 +148,19 @@ foreach (lib IN LISTS PATCHED_LIBS)
 endforeach ()
 
 # --- 3. Header-only without CMake (miniaudio) ---
+
 FetchContent_Declare(miniaudio GIT_REPOSITORY https://github.com/mackron/miniaudio.git GIT_TAG 0.11.23)
-FetchContent_MakeAvailable(miniaudio)
-# Create interface target right here if not present
-if (NOT TARGET miniaudio)
-    add_library(miniaudio INTERFACE)
-    target_include_directories(miniaudio INTERFACE ${miniaudio_SOURCE_DIR})
+# Stop CMake from glaze into miniaudio CMakeLists and using this library as Header-Only
+FetchContent_GetProperties(miniaudio)
+if (NOT miniaudio_POPULATED)
+    FetchContent_Populate(miniaudio)
+    if (NOT TARGET miniaudio)
+        add_library(miniaudio INTERFACE)
+        target_include_directories(miniaudio INTERFACE ${miniaudio_SOURCE_DIR})
+    endif ()
 endif ()
 
 # --- Add examples ---
-# TODO: remote this link and link from examples to 3rd_party
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/CMakeLists.txt")
     add_subdirectory(examples)
 endif ()

@@ -25,4 +25,15 @@ if(NOT TARGET SDL3::SDL3)
     find_package(SDL3 REQUIRED)
 endif()
 
-target_link_libraries(imgui PUBLIC SDL3::SDL3)
+target_link_libraries(imgui
+        PUBLIC
+        $<BUILD_INTERFACE:SDL3::SDL3> # Internal visible
+)
+
+include(${CMAKE_SOURCE_DIR}/InstallHelper.cmake)
+setup_install_rules(
+    TARGET imgui
+    NAMESPACE imgui
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/backends"
+    INCLUDE_SUBDIR "imgui"
+)

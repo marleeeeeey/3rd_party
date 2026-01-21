@@ -130,3 +130,10 @@ target_include_directories(enet PUBLIC
 if (WIN32)
     target_link_libraries(enet PUBLIC winmm ws2_32)
 endif()
+
+include(${CMAKE_SOURCE_DIR}/InstallHelper.cmake)
+setup_install_rules(
+    TARGET enet
+    NAMESPACE enet
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
