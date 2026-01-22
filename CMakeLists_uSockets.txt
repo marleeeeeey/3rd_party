@@ -7,24 +7,27 @@ project(uSockets LANGUAGES C CXX)
 # Search dependencies
 # ------------------------------------------------
 
-if(NOT TARGET uv)
-    find_package(libuv REQUIRED)
-endif()
-
 if(NOT EMSCRIPTEN)
-    find_package(OpenSSL REQUIRED)
-endif()
+    if(NOT TARGET uv)
+        find_package(libuv REQUIRED)
+    endif()
 
-if(TARGET libuv::uv_a)
-    set(LIBUV_LIB libuv::uv_a) # Static version
-elseif(TARGET libuv::uv)
-    set(LIBUV_LIB libuv::uv)   # Dinamic version
-elseif(TARGET uv_a)
-    set(LIBUV_LIB uv_a)
-elseif(TARGET uv)
-    set(LIBUV_LIB uv)
+    find_package(OpenSSL REQUIRED)
+
+    if(TARGET libuv::uv_a)
+        set(LIBUV_LIB libuv::uv_a) # Static version
+    elseif(TARGET libuv::uv)
+        set(LIBUV_LIB libuv::uv)   # Dinamic version
+    elseif(TARGET uv_a)
+        set(LIBUV_LIB uv_a)
+    elseif(TARGET uv)
+        set(LIBUV_LIB uv)
+    else()
+        message(FATAL_ERROR "Could not find any libuv target (uv, uv_a, libuv::uv, etc.)")
+    endif()
 else()
-    message(FATAL_ERROR "Could not find any libuv target (uv, uv_a, libuv::uv, etc.)")
+    # Use internal libuv port from Emscripten
+    set(LIBUV_LIB "")
 endif()
 
 
