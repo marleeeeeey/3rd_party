@@ -20,7 +20,7 @@
 #include "imgui_impl_sdlrenderer3.h"
 
 #ifdef __EMSCRIPTEN__
-#include "../libs/emscripten/emscripten_mainloop_stub.h"
+#include <emscripten/emscripten.h>
 #endif
 
 // Main code
@@ -70,23 +70,6 @@ int main(int, char**) {
   ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
   ImGui_ImplSDLRenderer3_Init(renderer);
 
-  // Load Fonts
-  // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-  // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-  // - If the file cannot be loaded, the function will return a nullptr. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-  // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-  // - Read 'docs/FONTS.md' for more instructions and details. If you like the default font but want it to scale better, consider using the 'ProggyVector' from the same author!
-  // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-  // - Our Emscripten build process allows embedding fonts to be accessible at runtime from the "fonts/" folder. See Makefile.emscripten for details.
-  // style.FontSizeBase = 20.0f;
-  // io.Fonts->AddFontDefault();
-  // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf");
-  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf");
-  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf");
-  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf");
-  // ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf");
-  // IM_ASSERT(font != nullptr);
-
   // Our state
   bool show_demo_window = true;
   bool show_another_window = false;
@@ -94,21 +77,15 @@ int main(int, char**) {
 
   // Main loop
   bool done = false;
-#ifdef __EMSCRIPTEN__
-  // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
-  // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
-  io.IniFilename = nullptr;
-  EMSCRIPTEN_MAINLOOP_BEGIN
-#else
-  while (!done)
-#endif
+  auto frame = [&]() -> void
   {
-    // Poll and handle events (inputs, window resize, etc.)
-    // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-    // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-    // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-    // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-    // [If using SDL_MAIN_USE_CALLBACKS: call ImGui_ImplSDL3_ProcessEvent() from your SDL_AppEvent() function]
+#ifdef __EMSCRIPTEN__
+    if (done) {
+      emscripten_cancel_main_loop();  /* this should "kill" the app. */
+      return;
+    }
+#endif
+
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       ImGui_ImplSDL3_ProcessEvent(&event);
@@ -121,7 +98,7 @@ int main(int, char**) {
     // [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your SDL_AppIterate() function]
     if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
       SDL_Delay(10);
-      continue;
+      return;
     }
 
     // Start the Dear ImGui frame
@@ -172,9 +149,15 @@ int main(int, char**) {
     SDL_RenderClear(renderer);
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
     SDL_RenderPresent(renderer);
-  }
+  };
+
+
 #ifdef __EMSCRIPTEN__
-  EMSCRIPTEN_MAINLOOP_END;
+  emscripten_set_main_loop(frame, 0, 1);
+#else
+  while (!done) {
+    frame();
+  }
 #endif
 
   // Cleanup
