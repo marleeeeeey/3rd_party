@@ -1,11 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
 project(uSockets LANGUAGES C CXX)
 
+
+
+# ------------------------------------------------
 # Search dependencies
+# ------------------------------------------------
+
 if(NOT TARGET uv)
     find_package(libuv REQUIRED)
 endif()
-find_package(OpenSSL REQUIRED)
+
+if(NOT EMSCRIPTEN)
+    find_package(OpenSSL REQUIRED)
+endif()
 
 if(TARGET libuv::uv_a)
     set(LIBUV_LIB libuv::uv_a) # Static version
@@ -19,45 +27,90 @@ else()
     message(FATAL_ERROR "Could not find any libuv target (uv, uv_a, libuv::uv, etc.)")
 endif()
 
+
+
+# ------------------------------------------------
 # Source files
+# ------------------------------------------------
+
 add_library(uSockets STATIC
     src/bsd.c
     src/context.c
     src/loop.c
     src/socket.c
     src/udp.c
-
-    src/crypto/openssl.c
-    src/crypto/sni_tree.cpp
-
     src/eventing/libuv.c
 )
+
+if(NOT EMSCRIPTEN)
+    target_sources(uSockets PRIVATE
+        src/crypto/openssl.c
+        src/crypto/sni_tree.cpp
+    )
+endif()
+
 add_library(uSockets::uSockets ALIAS uSockets)
 
+
+
+# ------------------------------------------------
 # Definitions
+# ------------------------------------------------
+
 target_compile_definitions(uSockets PUBLIC
     LIBUS_USE_LIBUV
-    LIBUS_USE_OPENSSL
 )
 
+if(NOT EMSCRIPTEN)
+    target_compile_definitions(uSockets PUBLIC
+        LIBUS_USE_OPENSSL
+    )
+endif()
+
+
+
+# ------------------------------------------------
 # Linkage
+# ------------------------------------------------
+
 target_link_libraries(uSockets PRIVATE
     ${LIBUV_LIB}
-    OpenSSL::SSL
-    OpenSSL::Crypto
 )
 
+if(NOT EMSCRIPTEN)
+    target_link_libraries(uSockets PRIVATE
+        OpenSSL::SSL
+        OpenSSL::Crypto
+    )
+endif()
+
+
+
+# ------------------------------------------------
 # Headers
+# ------------------------------------------------
+
 target_include_directories(uSockets PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
 
+
+# ------------------------------------------------
+# Install
+# ------------------------------------------------
+
 include(${CMAKE_SOURCE_DIR}/InstallHelper.cmake)
+
+set(EXTRA_DEPS "find_dependency(libuv)")
+if(NOT EMSCRIPTEN)
+    string(APPEND EXTRA_DEPS "\nfind_dependency(OpenSSL)")
+endif()
+
 setup_install_rules(
     TARGET uSockets
     NAMESPACE uSockets
     INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
     INCLUDE_SUBDIR "uSockets"
-    CONFIG_FILE_EXTRA_CONTENT "find_dependency(libuv)\nfind_dependency(OpenSSL)"
+    CONFIG_FILE_EXTRA_CONTENT "${EXTRA_DEPS}"
 )

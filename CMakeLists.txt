@@ -36,10 +36,13 @@ if (WIN32)
     list(APPEND CMAKE_PREFIX_PATH "${OPENSSL_UNPACK_DIR}/x64")
 endif ()
 
-# This will find system OpenSSL on Linux (libssl-dev)
-# and the downloaded one on Windows
-find_package(OpenSSL REQUIRED)
-message(STATUS "OpenSSL found at: ${OPENSSL_INCLUDE_DIR}")
+if (NOT EMSCRIPTEN)
+    # This will find system OpenSSL on Linux (libssl-dev) and the downloaded one on Windows
+    find_package(OpenSSL REQUIRED)
+    message(STATUS "OpenSSL found at: ${OPENSSL_INCLUDE_DIR}")
+else ()
+    message(STATUS "Emscripten detected: skipping OpenSSL search (using browser capabilities)")
+endif ()
 
 # --- Install rules for precompiled OpenSSL ---
 if (WIN32)

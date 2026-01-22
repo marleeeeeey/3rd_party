@@ -1,40 +1,81 @@
 cmake_minimum_required(VERSION 3.20)
 project(uWebSockets LANGUAGES CXX)
 
+
+
+# ------------------------------------------------
 # Search dependencies
-find_package(OpenSSL REQUIRED)
+# ------------------------------------------------
+
+if(NOT EMSCRIPTEN)
+    find_package(OpenSSL REQUIRED)
+endif()
+
 if(NOT TARGET uSockets)
     find_package(uSockets REQUIRED)
 endif()
 
+
+
+# ------------------------------------------------
 # Header-only library
+# ------------------------------------------------
+
 add_library(uWebSockets INTERFACE)
 add_library(uWebSockets::uWebSockets ALIAS uWebSockets)
 
+
+
+# ------------------------------------------------
 # Compile definitions
+# ------------------------------------------------
+
 target_compile_definitions(uWebSockets INTERFACE
     UWS_NO_ZLIB
 )
 
+
+# ------------------------------------------------
 # Include directories
+# ------------------------------------------------
+
 target_include_directories(uWebSockets INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
 
+
+# ------------------------------------------------
 # Link libraries
+# ------------------------------------------------
+
 target_link_libraries(uWebSockets INTERFACE
     uSockets::uSockets
-    OpenSSL::SSL
-    OpenSSL::Crypto
 )
 
+if(NOT EMSCRIPTEN)
+    target_link_libraries(uWebSockets INTERFACE
+        OpenSSL::SSL
+        OpenSSL::Crypto
+    )
+endif()
+
+# ------------------------------------------------
+# Install rules
+# ------------------------------------------------
+
 include(${CMAKE_SOURCE_DIR}/InstallHelper.cmake)
+
+set(EXTRA_DEPS "find_dependency(uSockets)")
+if(NOT EMSCRIPTEN)
+    string(APPEND EXTRA_DEPS "\nfind_dependency(OpenSSL)")
+endif()
+
 setup_install_rules(
     TARGET uWebSockets
     NAMESPACE uWebSockets
     INTERFACE
     INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
     INCLUDE_SUBDIR "uWebSockets"
-    CONFIG_FILE_EXTRA_CONTENT "find_dependency(uSockets)\nfind_dependency(OpenSSL)"
+    CONFIG_FILE_EXTRA_CONTENT "${EXTRA_DEPS}"
 )
