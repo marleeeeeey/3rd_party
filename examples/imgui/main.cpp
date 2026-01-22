@@ -77,11 +77,10 @@ int main(int, char**) {
 
   // Main loop
   bool done = false;
-  auto frame = [&]() -> void
-  {
+  auto frame = [&]() -> void {
 #ifdef __EMSCRIPTEN__
     if (done) {
-      emscripten_cancel_main_loop();  /* this should "kill" the app. */
+      emscripten_cancel_main_loop(); /* this should "kill" the app. */
       return;
     }
 #endif
@@ -150,7 +149,6 @@ int main(int, char**) {
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
     SDL_RenderPresent(renderer);
   };
-
 
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(frame, 0, 1);
