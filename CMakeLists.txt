@@ -142,8 +142,16 @@ FetchContent_Declare(asio GIT_REPOSITORY https://github.com/chriskohlhoff/asio.g
 FetchContent_Declare(uSockets GIT_REPOSITORY https://github.com/uNetworking/uSockets.git GIT_TAG 182b7e4fe7211f98682772be3df89c71dc4884fa)
 FetchContent_Declare(uWebSockets GIT_REPOSITORY https://github.com/uNetworking/uWebSockets.git GIT_TAG v20.74.0)
 
+set(PATCHED_LIBS imgui implot enet asio)
+
+# Disable uSockets and uWebSockets builds because Emscripten don't need them.
+# Emscripten contains own Emscripten WebSockets API.
+# https://emscripten.org/docs/porting/networking.html
+if (NOT EMSCRIPTEN)
+    list(APPEND PATCHED_LIBS uSockets uWebSockets)
+endif ()
+
 # Patching loop
-set(PATCHED_LIBS imgui implot enet asio uSockets uWebSockets)
 foreach (lib IN LISTS PATCHED_LIBS)
     # Convert to lower because FetchContent saves props and pathes in lower case
     string(TOLOWER "${lib}" lib_lc)
