@@ -28,11 +28,26 @@ function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
     # Ensure the generation directory exists
     file(MAKE_DIRECTORY "${FB_GEN_DIR}")
 
+    # Pick a host flatc when cross-compiling to Emscripten
+    if (EMSCRIPTEN)
+        find_program(FLATC_HOST_EXECUTABLE flatc)
+        if (NOT FLATC_HOST_EXECUTABLE)
+            message(FATAL_ERROR
+                    "EMSCRIPTEN build requires a host 'flatc' executable in PATH. "
+                    "Install flatbuffers-compiler (flatc).")
+        endif ()
+        set(FLATC_COMMAND "${FLATC_HOST_EXECUTABLE}")
+        set(FLATC_DEPENDS "${SCHEMA_PATH}")
+    else ()
+        set(FLATC_COMMAND $<TARGET_FILE:flatc>)
+        set(FLATC_DEPENDS "${SCHEMA_PATH}" flatc)
+    endif ()
+
     # Define the generation rule
     add_custom_command(
             OUTPUT "${GENERATED_HEADER}"
-            COMMAND flatc --cpp -o "${FB_GEN_DIR}" "${SCHEMA_PATH}"
-            DEPENDS "${SCHEMA_PATH}" flatc
+            COMMAND "${FLATC_COMMAND}" --cpp -o "${FB_GEN_DIR}" "${SCHEMA_PATH}"
+            DEPENDS ${FLATC_DEPENDS}
             COMMENT "Compiling FlatBuffers schema: ${SCHEMA_PATH} to ${GENERATED_HEADER}"
             VERBATIM
     )
