@@ -99,8 +99,10 @@ FetchContent_Declare(googletest GIT_REPOSITORY https://github.com/google/googlet
 set(gtest_force_shared_crt ON CACHE BOOL "Prevent overriding the parent project's settings (Windows)")
 
 FetchContent_Declare(openal-soft GIT_REPOSITORY https://github.com/kcat/openal-soft.git GIT_TAG 1.25.0)
+set(LIBTYPE STATIC CACHE STRING "")
 set(ALSOFT_EXAMPLES OFF CACHE BOOL "")
 set(ALSOFT_TESTS OFF CACHE BOOL "")
+set(ALSOFT_EMBED_HRTF_DATA ON CACHE BOOL "")
 
 FetchContent_Declare(tracy GIT_REPOSITORY https://github.com/wolfpld/tracy.git GIT_TAG v0.13.1)
 
