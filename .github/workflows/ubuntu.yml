@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
 
-  gcc (latest):
+  gcc:
     runs-on: ubuntu-latest
     container: gcc:latest
     steps:
@@ -32,7 +32,7 @@ jobs:
       - name: Build
         run: cmake --build build
 
-  emscripten (latest):
+  emscripten:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
