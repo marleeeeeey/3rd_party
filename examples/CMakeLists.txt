@@ -3,7 +3,6 @@ project(3rd_party_examples)
 
 add_subdirectory(asio)
 add_subdirectory(asio_and_flatbuffers)
-add_subdirectory(asio_and_openssl)
 add_subdirectory(box2d)
 add_subdirectory(cxxopts)
 add_subdirectory(enet)
@@ -35,8 +34,6 @@ add_dependencies(build_all_examples
         asio_sync_tcp_client_minimalProject
         asio_sync_tcp_and_fb_server_minimalProject
         asio_sync_tcp_and_fb_client_minimalProject
-        asio_and_open_ssl_async_tcp_server_minimalProject
-        asio_and_open_ssl_async_tcp_client_minimalProject
         box2d_minimalProject
         cxxopts_minimalProject
         cxxopts_dump_options_to_file_minimalProject
@@ -63,3 +60,14 @@ add_dependencies(build_all_examples
         uWebSockets_Broadcast_minimalProject
         uWebSockets_WS_BroadcastingEchoServer_minimalProject
 )
+
+
+# Disable examples with OpenSSL for Emscripten
+if (NOT EMSCRIPTEN)
+    add_subdirectory(asio_and_openssl)
+
+    add_dependencies(build_all_examples
+            asio_and_open_ssl_async_tcp_server_minimalProject
+            asio_and_open_ssl_async_tcp_client_minimalProject
+    )
+endif ()
