@@ -8,6 +8,7 @@ add_subdirectory(EnTT)
 add_subdirectory(flatbuffers)
 add_subdirectory(glm)
 add_subdirectory(GTest)
+add_subdirectory(imgui)
 add_subdirectory(magic_enum)
 add_subdirectory(miniaudio)
 add_subdirectory(nlohmann_json)
@@ -29,6 +30,7 @@ add_dependencies(build_all_examples
         flatbuffers_minimalProject
         glm_minimalProject
         GTest_minimalProject
+        imgui_minimalProject
         magic_enum_minimalProject
         miniaudio_minimalProject
         nlohmann_json_minimalProject
@@ -49,7 +51,6 @@ if (NOT EMSCRIPTEN)
     add_subdirectory(uWebSockets)
 
     # TODO ImGui: Rewrite this examples with #define SDL_MAIN_USE_CALLBACKS 1
-    add_subdirectory(imgui)
     add_subdirectory(implot)
 
     add_dependencies(build_all_examples
@@ -74,7 +75,6 @@ if (NOT EMSCRIPTEN)
             uWebSockets_WS_BroadcastingEchoServer_minimalProject
 
             # TODO ImGui: Rewrite this examples with #define SDL_MAIN_USE_CALLBACKS 1
-            imgui_minimalProject
             implot_minimalProject
     )
 endif ()
