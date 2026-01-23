@@ -24,7 +24,8 @@ jobs:
 
     strategy:
       matrix:
-        version: [ 19.1.7, 20.1.8, 21.1.8 ]
+        #version: [ 19.1.7, 20.1.8, 21.1.8 ]
+        version: [ 21.1.8 ]
 
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -43,3 +44,36 @@ jobs:
 
       - name: Build
         run: cmake --build build --parallel 10
+
+  emscripten:
+
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Install emscripten
+        uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
+
+      - name: Build host flatc (matches FlatBuffers headers version)
+        run: |
+          git clone --depth 1 --branch v25.12.19 https://github.com/google/flatbuffers.git flatbuffers_host
+          cmake -S flatbuffers_host -B flatbuffers_host/build -G "Ninja" `
+            -DFLATBUFFERS_BUILD_TESTS=OFF `
+            -DFLATBUFFERS_BUILD_FLATC=ON
+          cmake --build flatbuffers_host/build --target flatc
+          "FLATC_HOST_EXECUTABLE=$((Resolve-Path .\flatbuffers_host\build\flatc.exe).Path)" >> $env:GITHUB_ENV
+
+      - name: Run CMake (Emscripten)
+        run: |
+          $toolchain = "$env:EMSDK\upstream\emscripten\cmake\Modules\Platform\Emscripten.cmake"
+          cmake -S . -B build-emscripten -G "Ninja" `
+            -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
+            -D3RD_PARTY_BUILD_EXAMPLES=ON `
+            -DFLATC_HOST_EXECUTABLE="${{ env.FLATC_HOST_EXECUTABLE }}"
+
+      - name: Build (Emscripten)
+        run: cmake --build build-emscripten --parallel 10

@@ -78,7 +78,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
   ImGui_ImplSDL3_InitForSDLRenderer(state->window, state->renderer);
   ImGui_ImplSDLRenderer3_Init(state->renderer);
 
-
   // Function for ImPlot demonstration
   for (int i = 0; i < data_count; i++) {
     state->x[i] = i * 0.1f;
