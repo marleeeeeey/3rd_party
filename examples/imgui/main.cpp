@@ -128,7 +128,7 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
   ImGuiIO& io = ImGui::GetIO();
   ImGui::Render();
   SDL_SetRenderScale(state->renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
-  //SDL_SetRenderDrawColorFloat(state->renderer, state->clear_color.x, state->clear_color.y, state->clear_color.z, state->clear_color.w);
+  SDL_SetRenderDrawColorFloat(state->renderer, state->clear_color.x, state->clear_color.y, state->clear_color.z, state->clear_color.w);
   SDL_RenderClear(state->renderer);
   ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), state->renderer);
   SDL_RenderPresent(state->renderer);
