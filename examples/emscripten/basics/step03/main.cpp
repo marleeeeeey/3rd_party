@@ -20,6 +20,8 @@ Using EM_ASM()
 
 #include <emscripten.h>
 
+#include <cstdio>
+
 EM_JS(void, call_alert, (), {
   alert('hello world from C++! Var 02');
   // throw 'all done';
@@ -37,4 +39,17 @@ int main() {
       alert('hello world from C++! Var 03');
       // throw 'all done';
   );
+
+  // --------------
+
+  // send values from C into JavaScript
+  EM_ASM({ alert('I received: ' + $0); }, 100);
+
+  // receive values back from JS to C++
+  int x = EM_ASM_INT({
+    console.log('I received: ' + $0);
+    return $0 + 1; }, 100);
+  std::printf("%d\n", x);  // print to browser console
+
+  return 0;
 }
