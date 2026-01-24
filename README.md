@@ -31,10 +31,22 @@ cmake -S . -B build -D3RD_PARTY_BUILD_EXAMPLES=ON && cmake --build build
     ```
 
 2. Build `flatc` executable - flatbuffer compiler. It may be done by building this project for a native platform on the same machine.
-3. Run CMake with Emscripten toolchain file and flatc executable path.
+3. Run CMake with options `CMAKE_TOOLCHAIN_FILE` and `FLATC_HOST_EXECUTABLE` to be set. Example:
 
 ```shell
-cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=%EMSDK%\upstream\emscripten\cmake\Modules\Platform\Emscripten.cmake -D3RD_PARTY_BUILD_EXAMPLES=ON -DFLATC_HOST_EXECUTABLE=<ABSOLUTE_PATH_TO>\flatc.exe  && cmake --build build
+cd .\3rd_party
+
+cmake -S . -B build `
+  -DCMAKE_TOOLCHAIN_FILE="$env:EMSDK\upstream\emscripten\cmake\Modules\Platform\Emscripten.cmake" `
+  -DFLATC_HOST_EXECUTABLE="C:\path\to\flatc.exe" `
+  -D3RD_PARTY_BUILD_EXAMPLES=ON `
+  -DCMAKE_C_COMPILER="$env:EMSDK\upstream\emscripten\emcc.bat" `
+  -DCMAKE_CXX_COMPILER="$env:EMSDK\upstream\emscripten\em++.bat" `
+  -DCMAKE_BUILD_TYPE=Release `
+  -DCMAKE_MAKE_PROGRAM="C:\path\to\ninja.exe" `
+  -G Ninja
+  
+cmake --build build
 ```
 
 ### How to use libraries in your project
