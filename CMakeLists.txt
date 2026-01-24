@@ -11,6 +11,10 @@ if (NOT DEFINED CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 23 CACHE STRING "C++ standard to use")
 endif ()
 
+if(EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+endif()
+
 # ---------------------------------------------------
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable shared globally for WASM mostly")
@@ -65,9 +69,11 @@ if (WIN32)
     endif ()
 endif ()
 
-# Include helper and generate certificates
-include(CertificateHelper.cmake)
-generate_test_certificates()
+if (NOT EMSCRIPTEN)
+    # Include helper and generate certificates
+    include(CertificateHelper.cmake)
+    generate_test_certificates()
+endif ()
 
 # --- 1. Standard libs (FetchContent_MakeAvailable) ---
 

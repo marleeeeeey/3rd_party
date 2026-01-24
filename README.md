@@ -12,6 +12,31 @@ Some libraries are patched by custom CMakeLists.txt files before building.
 cmake -S . -B build -D3RD_PARTY_BUILD_EXAMPLES=ON && cmake --build build
 ```
 
+**Emscripten build**
+
+1. Install Emscripten.
+
+    ```shell
+    git clone https://github.com/emscripten-core/emsdk.git
+    cd .\emsdk
+    .\emsdk install latest
+    .\emsdk activate latest
+    ```
+
+   Check if Emscripten is installed correctly:
+
+    ```shell
+   .\emsdk_env.ps1
+    emcc -v
+    ```
+
+2. Build `flatc` executable - flatbuffer compiler. It may be done by building this project for a native platform on the same machine.
+3. Run CMake with Emscripten toolchain file and flatc executable path.
+
+```shell
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=%EMSDK%\upstream\emscripten\cmake\Modules\Platform\Emscripten.cmake -D3RD_PARTY_BUILD_EXAMPLES=ON -DFLATC_HOST_EXECUTABLE=<ABSOLUTE_PATH_TO>\flatc.exe  && cmake --build build
+```
+
 ### How to use libraries in your project
 
 1. Add this project to your repo as a submodule.
