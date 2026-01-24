@@ -64,7 +64,7 @@ endif()
 # Install rules
 # ------------------------------------------------
 
-include(${CMAKE_SOURCE_DIR}/InstallHelper.cmake)
+include(${THIRD_PARTY_ROOT}/InstallHelper.cmake)
 
 set(EXTRA_DEPS "find_dependency(uSockets)")
 if(NOT EMSCRIPTEN)

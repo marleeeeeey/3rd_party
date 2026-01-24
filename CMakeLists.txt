@@ -15,6 +15,8 @@ if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
 endif()
 
+set(THIRD_PARTY_ROOT "${CMAKE_CURRENT_LIST_DIR}" CACHE INTERNAL "3rd_party root directory")
+
 # ---------------------------------------------------
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable shared globally for WASM mostly")
@@ -71,7 +73,7 @@ endif ()
 
 if (NOT EMSCRIPTEN)
     # Include helper and generate certificates
-    include(CertificateHelper.cmake)
+    include(${THIRD_PARTY_ROOT}/CertificateHelper.cmake)
     generate_test_certificates()
 endif ()
 

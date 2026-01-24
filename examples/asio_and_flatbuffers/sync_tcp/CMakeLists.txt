@@ -1,4 +1,4 @@
-include("../../../FlatbuffersHelper.cmake")
+include(${THIRD_PARTY_ROOT}/FlatbuffersHelper.cmake)
 
 add_flatbuffers_schema(solder_schema
         solder.fbs
