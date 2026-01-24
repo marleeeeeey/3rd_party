@@ -81,5 +81,6 @@ if (EMSCRIPTEN)
     add_dependencies(build_all_examples
             # Emscripten
             emscripten_basic_step01_minimalProject
+            emscripten_basic_step02_minimalProject
     )
 endif ()

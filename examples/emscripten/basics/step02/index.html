@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Emscripten test</title>
+</head>
+<body>
+<pre id="out"></pre>
+
+<script>
+    const out = document.getElementById('out');
+    const log = (...a) => (out.textContent += a.join(' ') + '\n');
+</script>
+
+<script src="./emscripten_basic_step02_minimalProject.js"></script>
+
+<script>
+    (async () => {
+        const instance = await Module({
+            print: (text) => log(text),
+            printErr: (text) => log('ERR:', text),
+        });
+
+        log('Module loaded');
+
+        log('_sayHi exists:', typeof instance._sayHi);
+        log('_daysInWeek exists:', typeof instance._daysInWeek);
+
+        if (typeof instance._sayHi === 'function') instance._sayHi();
+        if (typeof instance._daysInWeek === 'function') log('days=', instance._daysInWeek());
+
+    })();
+</script>
+</body>
+</html>
