@@ -1,18 +1,13 @@
-// Original example: https://emscripten.org/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html
+/* https://emscripten.org/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html
 
-/*
-
-Interacting with an API written in C/C++ from NodeJS
-
--------------------------------------
-HOW TO USE in BROWSER via JavaScript:
--------------------------------------
+----------------------------------------------------------
+Interacting with an API (MODULE) written in C/C++ from JS
+----------------------------------------------------------
 
 Start index.html in browser from output folder.
 
- */
+*/
 
-// api_example.c
 #include <emscripten.h>
 #include <stdio.h>
 
