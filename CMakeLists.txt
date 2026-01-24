@@ -38,8 +38,22 @@ if (WIN32)
     # Retrieve path to unpacked achive
     FetchContent_GetProperties(openssl_bin SOURCE_DIR OPENSSL_UNPACK_DIR)
 
-    # Add x64 to the path for Windows binaries
-    list(APPEND CMAKE_PREFIX_PATH "${OPENSSL_UNPACK_DIR}/x64")
+    # Pick correct OpenSSL subfolder by platform/arch
+    set(_openssl_arch_dir "")
+    if (CMAKE_VS_PLATFORM_NAME STREQUAL "Win32")
+        set(_openssl_arch_dir "x86")
+    elseif (CMAKE_VS_PLATFORM_NAME STREQUAL "x64")
+        set(_openssl_arch_dir "x64")
+    elseif (CMAKE_VS_PLATFORM_NAME STREQUAL "ARM64")
+        set(_openssl_arch_dir "arm64")
+    elseif (CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(_openssl_arch_dir "x64")
+    else ()
+        set(_openssl_arch_dir "x86")
+    endif ()
+
+    set(OPENSSL_ROOT_DIR "${OPENSSL_UNPACK_DIR}/${_openssl_arch_dir}" CACHE PATH "OpenSSL root dir" FORCE)
+    list(APPEND CMAKE_PREFIX_PATH "${OPENSSL_ROOT_DIR}")
 endif ()
 
 if (NOT EMSCRIPTEN)
