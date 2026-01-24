@@ -1,3 +1,5 @@
 /examples/server.crt
 /examples/server.key
 /examples/openssl-localhost.cnf
+/external/
+/.idea/
