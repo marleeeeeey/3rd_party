@@ -24,7 +24,6 @@ jobs:
 
     strategy:
       matrix:
-        #version: [ 19.1.7, 20.1.8, 21.1.8 ]
         version: [ 21.1.8 ]
 
     steps:
@@ -77,3 +76,40 @@ jobs:
 
       - name: Build (Emscripten)
         run: cmake --build build-emscripten --parallel 10
+
+  msvc:
+
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        architecture: [Win32, x64]
+        std_version: [default, latest]
+
+    runs-on: windows-2022
+
+    steps:
+      -
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Set extra CXX_FLAGS for latest std_version
+        id: cxxflags
+        run: |
+          if [ "${{ matrix.std_version }}" = "latest" ]; then
+            echo "flags=/permissive- /std:c++latest /utf-8 /W4 /WX" >> $GITHUB_ENV
+          else
+            echo "flags=/W4 /WX" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      - name: Run CMake (Release)
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -D3RD_PARTY_BUILD_EXAMPLES=ON -DCMAKE_CXX_FLAGS="$env:flags"
+        if: matrix.build_type == 'Release'
+        shell: pwsh
+
+      - name: Run CMake (Debug)
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A ${{ matrix.architecture }} -D3RD_PARTY_BUILD_EXAMPLES=ON -DCMAKE_CXX_FLAGS="$env:flags"
+        if: matrix.build_type == 'Debug'
+        shell: pwsh
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }} --parallel 10
