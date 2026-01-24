@@ -75,3 +75,11 @@ if (NOT EMSCRIPTEN)
             uWebSockets_WS_BroadcastingEchoServer_minimalProject
     )
 endif ()
+
+if (EMSCRIPTEN)
+    add_subdirectory(emscripten)
+    add_dependencies(build_all_examples
+            # Emscripten
+            emscripten_basic_step01_minimalProject
+    )
+endif ()
