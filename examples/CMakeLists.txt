@@ -83,5 +83,6 @@ if (EMSCRIPTEN)
             emscripten_basic_step01_minimalProject
             emscripten_basic_step02_minimalProject
             emscripten_basic_step03_minimalProject
+            emscripten_basic_step04_minimalProject
     )
 endif ()

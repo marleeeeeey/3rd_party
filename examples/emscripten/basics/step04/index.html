@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<script>
+    var Module = {
+        onRuntimeInitialized: function () {
+            alert('lerp result: ' + Module.lerp(1, 2, 0.5));
+
+            var instance = new Module.MyClass(10, "hello");
+            alert(instance.x); // 10
+            instance.incrementX();
+            alert(instance.x); // 11
+            instance.x = 20;
+            alert(instance.x); // 20
+            alert(Module.MyClass.getStringFromInstance(instance)); // "hello"
+            instance.delete();
+        }
+    };
+</script>
+<script src="emscripten_basic_step04_minimalProject.js"></script>
+</html>
