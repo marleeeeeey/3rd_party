@@ -21,6 +21,16 @@ int main() {
   // See https://machinezone.github.io/IXWebSocket/usage/#tls-support-and-configuration
   //     https://github.com/machinezone/IXWebSocket/issues/386#issuecomment-1105235227 (self signed certificates)
   std::string url("wss://echo.websocket.org");
+
+  constexpr bool useLocalhost = false;
+  if (useLocalhost) {
+    debugLog() << "Using localhost. Build and start local-host server project: uWebSockets_EchoServer_minimalProject." << std::endl;
+    url = "wss://localhost:9001";
+    ix::SocketTLSOptions tls;
+    tls.caFile = "server.crt";
+    webSocket.setTLSOptions(tls);
+  }
+
   webSocket.setUrl(url);
 
   debugLog() << "Connecting to " << url << "..." << std::endl;

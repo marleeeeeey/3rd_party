@@ -90,14 +90,12 @@ To copy certificates to the `examples` build folder for a specific project, upda
 ```shell
 add_custom_command(TARGET YOUR_PROJECT_NAME_HERE POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../../server.crt"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../../server.key"
+        "${THIRD_PARTY_ROOT}/examples/server.crt"
+        "${THIRD_PARTY_ROOT}/examples/server.key"
         $<TARGET_FILE_DIR:YOUR_PROJECT_NAME_HERE>
         COMMENT "WARNING: Copying tests SSL certificates to output directory"
 )
 ```
-
-Please make shure that you use a relative path from the `CMAKE_CURRENT_SOURCE_DIR` variable.
 
 #### Install test certificate on Windows (optional)
 
