@@ -5,6 +5,7 @@
 #define DEBUG_LOG_DISABLE_VERBOSE_LEVEL // disable logging at VERBOSE level
 #define DEBUG_LOG_USER_PREFIX "[APP]" // override prefix for this file
 debugLog() << "line" << msg << std::endl;
+verboseLog() << "line" << msg << std::endl;
 */
 
 #pragma once

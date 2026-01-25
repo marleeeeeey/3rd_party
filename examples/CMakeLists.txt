@@ -49,6 +49,7 @@ if (NOT EMSCRIPTEN)
     add_subdirectory(asio)
     add_subdirectory(asio_and_flatbuffers)
     add_subdirectory(asio_and_openssl)
+    add_subdirectory(ixwebsocket)
     add_subdirectory(uSockets)
     add_subdirectory(uWebSockets)
 
@@ -65,6 +66,9 @@ if (NOT EMSCRIPTEN)
             asio_sync_tcp_and_fb_client_minimalProject
             asio_and_open_ssl_async_tcp_server_minimalProject
             asio_and_open_ssl_async_tcp_client_minimalProject
+
+            # ixwebsocket
+            ixwebsocket_minimalProject
 
             # uSockets, uWebSockets
             uSockets_tcp_no_sll_server_minimalProject

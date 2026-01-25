@@ -138,6 +138,11 @@ if (NOT EMSCRIPTEN)
     FetchContent_Declare(libuv GIT_REPOSITORY https://github.com/libuv/libuv.git GIT_TAG v1.51.0)
     set(LIBUV_BUILD_TESTS OFF CACHE BOOL "")
     set(LIBUV_BUILD_SHARED ON CACHE BOOL "")
+
+    FetchContent_Declare(ixwebsocket GIT_REPOSITORY https://github.com/machinezone/IXWebSocket.git GIT_TAG v11.4.6)
+    set(USE_ZLIB OFF CACHE BOOL "" FORCE)
+    set(USE_TLS ON CACHE BOOL "" FORCE)
+    set(USE_OPEN_SSL ON CACHE BOOL "" FORCE)
 endif ()
 
 # Make standard libs available. They are not required any patches
@@ -149,7 +154,7 @@ set(LIBS_TO_POPULATE
 )
 
 if (NOT EMSCRIPTEN)
-    list(APPEND LIBS_TO_POPULATE libuv)
+    list(APPEND LIBS_TO_POPULATE libuv ixwebsocket)
 endif ()
 
 FetchContent_MakeAvailable(${LIBS_TO_POPULATE})
