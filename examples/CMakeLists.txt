@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(3rd_party_examples)
 
 add_subdirectory(box2d)
+add_subdirectory(concurrentqueue)
 add_subdirectory(cxxopts)
 add_subdirectory(enet)
 add_subdirectory(EnTT)
@@ -23,6 +24,7 @@ add_subdirectory(Tracy)
 add_custom_target(build_all_examples)
 add_dependencies(build_all_examples
         box2d_minimalProject
+        concurrentqueue_minimalProject
         cxxopts_minimalProject
         cxxopts_dump_options_to_file_minimalProject
         enet_server_minimalProject

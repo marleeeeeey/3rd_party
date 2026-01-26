@@ -38,7 +38,7 @@ int main() {
 
   debugLog() << "Connecting to " << url << "..." << std::endl;
 
-  // Create sinhronisation primitives.
+  // Create synchronization primitives.
   std::promise<void> openedPromise;
   std::shared_future<void> opened = openedPromise.get_future().share();
   std::promise<std::string> errorPromise;

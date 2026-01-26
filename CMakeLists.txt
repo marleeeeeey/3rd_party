@@ -134,6 +134,8 @@ set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
 FetchContent_Declare(cxxopts GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git GIT_TAG v3.3.1)
 set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "")
 
+FetchContent_Declare(concurrentqueue GIT_REPOSITORY https://github.com/cameron314/concurrentqueue.git GIT_TAG v1.0.4)
+
 if (NOT EMSCRIPTEN)
     FetchContent_Declare(libuv GIT_REPOSITORY https://github.com/libuv/libuv.git GIT_TAG v1.51.0)
     set(LIBUV_BUILD_TESTS OFF CACHE BOOL "")
@@ -150,7 +152,7 @@ endif ()
 set(LIBS_TO_POPULATE
         box2d entt nlohmann_json SDL3 SDL3_image spdlog
         glm magic_enum googletest openal-soft tracy
-        flatbuffers cxxopts
+        flatbuffers cxxopts concurrentqueue
 )
 
 if (NOT EMSCRIPTEN)
