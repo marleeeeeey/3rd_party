@@ -30,7 +30,8 @@ cmake -S . -B build -D3RD_PARTY_BUILD_EXAMPLES=ON && cmake --build build
     emcc -v
     ```
 
-2. Build `flatc` executable - flatbuffer compiler. It may be done by building this project for a native platform on the same machine.
+2. Build `flatc` executable - flatbuffer compiler. It may be done by building this project for a native platform on the same machine. Or it
+   can be downloaded from the official releases page: https://github.com/google/flatbuffers/releases/tag/v25.12.19
 3. Run CMake with options `CMAKE_TOOLCHAIN_FILE` and `FLATC_HOST_EXECUTABLE` to be set. Example:
 
 ```shell
