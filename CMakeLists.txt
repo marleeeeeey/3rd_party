@@ -31,6 +31,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable shared globally for WASM mostly")
 
 include(FetchContent)
 include("${THIRD_PARTY_ROOT}/OpenSSLHelper.cmake")
+include("${THIRD_PARTY_ROOT}/WhiteBlackListModeHelper.cmake")
 
 # ---------------------------------------------------
 # Install Open SSL
@@ -107,6 +108,7 @@ if (NOT EMSCRIPTEN)
     list(APPEND LIBS_TO_POPULATE libuv ixwebsocket)
 endif ()
 
+black_list_filter(LIBS_TO_POPULATE LIBS_TO_POPULATE)
 FetchContent_MakeAvailable(${LIBS_TO_POPULATE})
 
 
@@ -128,6 +130,7 @@ if (NOT EMSCRIPTEN)
 endif ()
 
 # Patching loop
+black_list_filter(PATCHED_LIBS PATCHED_LIBS)
 foreach (lib IN LISTS PATCHED_LIBS)
     # Convert to lower because FetchContent saves props and pathes in lower case
     string(TOLOWER "${lib}" lib_lc)
