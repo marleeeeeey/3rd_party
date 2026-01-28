@@ -47,7 +47,7 @@ install_open_ssl()
 FetchContent_Declare(box2d GIT_REPOSITORY https://github.com/erincatto/box2d.git GIT_TAG v3.1.1)
 
 FetchContent_Declare(entt GIT_REPOSITORY https://github.com/skypjack/entt.git GIT_TAG v3.16.0)
-set(ENTT_INSTALL ON CACHE BOOL "")
+set(ENTT_INSTALL OFF CACHE BOOL "")
 
 FetchContent_Declare(nlohmann_json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG v3.12.0)
 set(JSON_BuildTests OFF CACHE BOOL "")
