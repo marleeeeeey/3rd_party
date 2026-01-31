@@ -1,6 +1,6 @@
 // Simple logging function. Logs thread id before each line. USAGE:
 /*
-#include "debug_log/DebugLog.h"
+#include "DebugLog/DebugLog.h"
 #define DEBUG_LOG_DISABLE_DEBUG_LEVEL // disable logging at DEBUG level
 #define DEBUG_LOG_DISABLE_VERBOSE_LEVEL // disable logging at VERBOSE level
 #define DEBUG_LOG_USER_PREFIX "[APP]" // override prefix for this file
