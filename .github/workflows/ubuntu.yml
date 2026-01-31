@@ -33,7 +33,7 @@ jobs:
           apt-get update
           apt-get install -y libssl-dev openssl
 
-      - name: Get latest CMake and ninja
+      - name: Get CMake and ninja
         uses: lukka/get-cmake@9e07ecdcee1b12e5037e42f410b67f03e2f626e1 # v4.2.1
 
       - name: Run CMake
@@ -71,7 +71,7 @@ jobs:
           cmake --build flatbuffers_host/build --target flatc
           echo "FLATC_HOST_EXECUTABLE=$PWD/flatbuffers_host/build/flatc" >> $GITHUB_ENV
 
-      - name: Get latest CMake and ninja
+      - name: Get CMake and ninja
         uses: lukka/get-cmake@9e07ecdcee1b12e5037e42f410b67f03e2f626e1 # v4.2.1
 
       - name: Run CMake
