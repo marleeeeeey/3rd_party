@@ -22,7 +22,11 @@ jobs:
     container: gcc:latest
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: recursive
 
       - name: Install OpenSSL
         run: |
@@ -48,10 +52,13 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Install emscripten
+      - name: Install Emscripten
         uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
 
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: recursive
 
       - name: Build host flatc (matches FlatBuffers headers version)
         run: |
