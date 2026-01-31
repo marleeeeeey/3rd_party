@@ -27,7 +27,11 @@ jobs:
         version: [ 21.1.8 ]
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: recursive
 
       - name: Install Clang
         run: |
@@ -52,9 +56,13 @@ jobs:
         shell: pwsh
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - name: Install emscripten
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: recursive
+
+      - name: Install Emscripten
         uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
 
       - name: Build host flatc (matches FlatBuffers headers version)
@@ -81,15 +89,18 @@ jobs:
 
     strategy:
       matrix:
-        build_type: [Debug, Release]
-        architecture: [Win32, x64]
-        std_version: [default, latest]
+        build_type: [ Debug, Release ]
+        architecture: [ Win32, x64 ]
+        std_version: [ default, latest ]
 
     runs-on: windows-2022
 
     steps:
 
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: recursive
 
       - name: Set extra CXX_FLAGS for latest std_version
         id: cxxflags
