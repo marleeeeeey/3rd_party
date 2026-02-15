@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     // sslv23 is a generic method that supports various TLS versions.
     asio::ssl::context ssl_context(asio::ssl::context::sslv23);
 
-    // TODO. Optional: Load trusted CAs if you want to verify the server
+    // (Optional) Load trusted CAs if you want to verify the server
     ssl_context.set_verify_mode(asio::ssl::verify_peer);
     ssl_context.load_verify_file("server.crt");  // "ca.pem"
 

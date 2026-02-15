@@ -108,7 +108,7 @@ class ChatServer {
                              asio::ssl::context::no_sslv2 |
                              asio::ssl::context::single_dh_use);
 
-    // TODO For testing purposes only:
+    // (Optional) For testing purposes only:
     ssl_context_.use_certificate_chain_file("server.crt");
     ssl_context_.use_private_key_file("server.key", asio::ssl::context::pem);
 
