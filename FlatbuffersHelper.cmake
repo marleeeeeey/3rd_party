@@ -25,6 +25,8 @@ function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
     set(FB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/fb_gen")
     set(GENERATED_HEADER "${FB_GEN_DIR}/${FILE_NAME}_generated.h")
 
+    message(STATUS "Flatbuffer ${FILE_NAME} output path: ${GENERATED_HEADER}:1:1")
+
     # Ensure the generation directory exists
     file(MAKE_DIRECTORY "${FB_GEN_DIR}")
 
@@ -48,7 +50,7 @@ function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
             OUTPUT "${GENERATED_HEADER}"
             COMMAND "${FLATC_COMMAND}" --cpp -o "${FB_GEN_DIR}" "${SCHEMA_PATH}"
             DEPENDS ${FLATC_DEPENDS}
-            COMMENT "Compiling FlatBuffers schema: ${SCHEMA_PATH} to ${GENERATED_HEADER}"
+            COMMENT "Compiling FlatBuffers schema: ${SCHEMA_PATH}:1:1 to ${GENERATED_HEADER}:1:1"
             VERBATIM
     )
 
