@@ -6,29 +6,44 @@ if (NOT TARGET flatc)
     message(FATAL_ERROR "Flatbuffers target 'flatc' not found. Ensure flatbuffers is added via FetchContent.")
 endif ()
 
-# Function to compile FlatBuffers schema and create a logical target
-# @param TARGET_NAME  Name of the library to create
-# @param SCHEMA_PATH  Path to the .fbs schema file (can be relative to current CMakeLists.txt)
-function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
-    # Convert relative path to absolute relative to the calling CMakeLists.txt
-    if (NOT IS_ABSOLUTE "${SCHEMA_PATH}")
-        set(SCHEMA_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${SCHEMA_PATH}")
-    endif ()
+# Function to compile multiple FlatBuffers schemas into a single target
+# @param TARGET_NAME     Name of the library to create
+# @param SCHEMAS         List of paths to .fbs schema files
+function(add_flatbuffers_schema TARGET_NAME)
+    # Collect all arguments after the first one as SCHEMA_PATHS
+    set(SCHEMA_PATHS ${ARGN})
 
-    if (NOT EXISTS "${SCHEMA_PATH}")
-        message(FATAL_ERROR "FlatBuffers schema not found: ${SCHEMA_PATH}")
-    endif ()
+    # Convert relative paths to absolute paths
+    set(ABSOLUTE_SCHEMA_PATHS "")
+    foreach (SCHEMA_PATH IN LISTS SCHEMA_PATHS)
+        if (NOT IS_ABSOLUTE "${SCHEMA_PATH}")
+            list(APPEND ABSOLUTE_SCHEMA_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/${SCHEMA_PATH}")
+        else ()
+            list(APPEND ABSOLUTE_SCHEMA_PATHS "${SCHEMA_PATH}")
+        endif ()
+    endforeach ()
 
-    get_filename_component(FILE_NAME ${SCHEMA_PATH} NAME_WE)
+    # Validate each schema path
+    foreach (SCHEMA_PATH IN LISTS ABSOLUTE_SCHEMA_PATHS)
+        if (NOT EXISTS "${SCHEMA_PATH}")
+            message(FATAL_ERROR "FlatBuffers schema not found: ${SCHEMA_PATH}")
+        endif ()
+    endforeach ()
 
-    # Use binary directory to keep source tree clean
-    set(FB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/fb_gen")
-    set(GENERATED_HEADER "${FB_GEN_DIR}/${FILE_NAME}_generated.h")
-
-    message(STATUS "Flatbuffer ${FILE_NAME} output path: ${GENERATED_HEADER}:1:1")
+    # List of all generated headers
+    set(GENERATED_HEADERS "")
+    set(FB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/fb_gen") # Use binary dir to keep the source tree clean
 
     # Ensure the generation directory exists
     file(MAKE_DIRECTORY "${FB_GEN_DIR}")
+
+    # Collect all output headers for tracking
+    foreach (SCHEMA_PATH IN LISTS ABSOLUTE_SCHEMA_PATHS)
+        get_filename_component(FILE_NAME ${SCHEMA_PATH} NAME_WE)
+        set(GENERATED_HEADER "${FB_GEN_DIR}/${FILE_NAME}_generated.h")
+        list(APPEND GENERATED_HEADERS "${GENERATED_HEADER}")
+        message(STATUS "Flatbuffer ${FILE_NAME} output path: ${GENERATED_HEADER}:1:1")
+    endforeach ()
 
     # Pick a host flatc when cross-compiling to Emscripten
     if (EMSCRIPTEN)
@@ -39,32 +54,33 @@ function(add_flatbuffers_schema TARGET_NAME SCHEMA_PATH)
                     "Install flatbuffers-compiler (flatc).")
         endif ()
         set(FLATC_COMMAND "${FLATC_HOST_EXECUTABLE}")
-        set(FLATC_DEPENDS "${SCHEMA_PATH}")
+        set(FLATC_DEPENDS ${ABSOLUTE_SCHEMA_PATHS})
     else ()
         set(FLATC_COMMAND $<TARGET_FILE:flatc>)
-        set(FLATC_DEPENDS "${SCHEMA_PATH}" flatc)
+        set(FLATC_DEPENDS ${ABSOLUTE_SCHEMA_PATHS} flatc)
     endif ()
 
-    # Define the generation rule
+    # Define the generation rule (single command handles all schemas)
     add_custom_command(
-            OUTPUT "${GENERATED_HEADER}"
-            COMMAND "${FLATC_COMMAND}" --cpp -o "${FB_GEN_DIR}" "${SCHEMA_PATH}"
+            OUTPUT ${GENERATED_HEADERS}
+            COMMAND "${FLATC_COMMAND}" --cpp -o "${FB_GEN_DIR}" ${ABSOLUTE_SCHEMA_PATHS}
             DEPENDS ${FLATC_DEPENDS}
-            COMMENT "Compiling FlatBuffers schema: ${SCHEMA_PATH}:1:1 to ${GENERATED_HEADER}:1:1"
+            COMMENT "Compiling FlatBuffers schemas to: ${FB_GEN_DIR}"
             VERBATIM
     )
 
-    # HACK. Part1. add_custom_target is a real thing that Ninja can't ignore.
-    add_custom_target(${TARGET_NAME}_gen_task DEPENDS "${GENERATED_HEADER}")
+    # HACK. Part1. Generate custom target for schema files.
+    set(CUSTOM_TARGET_NAME ${TARGET_NAME}_gen_task)
+    add_custom_target(${CUSTOM_TARGET_NAME} DEPENDS ${GENERATED_HEADERS})
 
     # Create the interface library
     add_library(${TARGET_NAME} INTERFACE)
 
-    # # HACK. Part2. Make the interface library depend on the real target
-    add_dependencies(${TARGET_NAME} ${TARGET_NAME}_gen_task)
+    # HACK. Part2. Make the interface library depend on the custom target
+    add_dependencies(${TARGET_NAME} ${CUSTOM_TARGET_NAME})
 
-    # Add the generated header as a source so CMake tracks dependencies
-    target_sources(${TARGET_NAME} INTERFACE "${GENERATED_HEADER}")
+    # Add the generated headers as sources so that CMake tracks dependencies
+    target_sources(${TARGET_NAME} INTERFACE ${GENERATED_HEADERS})
 
     # Set include directories for the target
     target_include_directories(${TARGET_NAME} INTERFACE "${FB_GEN_DIR}")
