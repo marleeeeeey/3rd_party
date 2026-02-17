@@ -32,15 +32,19 @@ function(add_flatbuffers_schema TARGET_NAME)
 
     # List of all generated headers
     set(GENERATED_HEADERS "")
-    set(FB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/fb_gen") # Use binary dir to keep the source tree clean
 
-    # Ensure the generation directory exists
+    # Use binary dir to keep the source tree clean
+    set(INCLUDE_DIR_FOR_TARGET "${CMAKE_CURRENT_BINARY_DIR}/include")
+    file(MAKE_DIRECTORY "${INCLUDE_DIR_FOR_TARGET}")
+    set(FB_GEN_DIR "${INCLUDE_DIR_FOR_TARGET}") # Alternative: "${INCLUDE_DIR_FOR_TARGET}/FlatbuffersGenerated"
     file(MAKE_DIRECTORY "${FB_GEN_DIR}")
+
+    set(FB_GEN_FILENAME_SUFFIX "_generated") # "_generated" - is default suffix
 
     # Collect all output headers for tracking
     foreach (SCHEMA_PATH IN LISTS ABSOLUTE_SCHEMA_PATHS)
         get_filename_component(FILE_NAME ${SCHEMA_PATH} NAME_WE)
-        set(GENERATED_HEADER "${FB_GEN_DIR}/${FILE_NAME}_generated.h")
+        set(GENERATED_HEADER "${FB_GEN_DIR}/${FILE_NAME}${FB_GEN_FILENAME_SUFFIX}.h")
         list(APPEND GENERATED_HEADERS "${GENERATED_HEADER}")
         message(STATUS "Flatbuffer ${FILE_NAME} output path: ${GENERATED_HEADER}:1:1")
     endforeach ()
@@ -60,10 +64,11 @@ function(add_flatbuffers_schema TARGET_NAME)
         set(FLATC_DEPENDS ${ABSOLUTE_SCHEMA_PATHS} flatc)
     endif ()
 
+
     # Define the generation rule (single command handles all schemas)
     add_custom_command(
             OUTPUT ${GENERATED_HEADERS}
-            COMMAND "${FLATC_COMMAND}" --cpp -o "${FB_GEN_DIR}" ${ABSOLUTE_SCHEMA_PATHS}
+            COMMAND "${FLATC_COMMAND}" --cpp -o "${FB_GEN_DIR}" --filename-suffix "${FB_GEN_FILENAME_SUFFIX}" ${ABSOLUTE_SCHEMA_PATHS}
             DEPENDS ${FLATC_DEPENDS}
             COMMENT "Compiling FlatBuffers schemas to: ${FB_GEN_DIR}"
             VERBATIM
@@ -83,7 +88,7 @@ function(add_flatbuffers_schema TARGET_NAME)
     target_sources(${TARGET_NAME} INTERFACE ${GENERATED_HEADERS})
 
     # Set include directories for the target
-    target_include_directories(${TARGET_NAME} INTERFACE "${FB_GEN_DIR}")
+    target_include_directories(${TARGET_NAME} INTERFACE "${INCLUDE_DIR_FOR_TARGET}")
 
     # Link mandatory flatbuffers headers (assumes flatbuffers target exists)
     target_link_libraries(${TARGET_NAME} INTERFACE flatbuffers)
