@@ -100,7 +100,7 @@ target_include_directories(uSockets PUBLIC
 # Install
 # ------------------------------------------------
 
-include(${THIRD_PARTY_ROOT}/InstallHelper.cmake)
+include(${THIRD_PARTY_ROOT}/cmake/InstallHelper.cmake)
 
 set(EXTRA_DEPS "find_dependency(libuv)")
 if(NOT EMSCRIPTEN)

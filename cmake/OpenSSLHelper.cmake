@@ -63,7 +63,7 @@ function(install_open_ssl)
 
     if (NOT EMSCRIPTEN)
         # Include helper and generate certificates
-        include(${THIRD_PARTY_ROOT}/CertificateHelper.cmake)
+        include(${THIRD_PARTY_ROOT}/cmake/CertificateHelper.cmake)
         generate_test_certificates()
     endif ()
 

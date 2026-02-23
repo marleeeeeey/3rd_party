@@ -13,7 +13,7 @@ target_include_directories(asio INTERFACE
     $<INSTALL_INTERFACE:include>
 )
 
-include(${THIRD_PARTY_ROOT}/InstallHelper.cmake)
+include(${THIRD_PARTY_ROOT}/cmake/InstallHelper.cmake)
 setup_install_rules(
     TARGET asio
     NAMESPACE asio

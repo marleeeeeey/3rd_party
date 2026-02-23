@@ -30,8 +30,8 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable shared globally for WASM mostly")
 # ---------------------------------------------------
 
 include(FetchContent)
-include("${THIRD_PARTY_ROOT}/OpenSSLHelper.cmake")
-include("${THIRD_PARTY_ROOT}/WhiteBlackListModeHelper.cmake")
+include("${THIRD_PARTY_ROOT}/cmake/OpenSSLHelper.cmake")
+include("${THIRD_PARTY_ROOT}/cmake/WhiteBlackListModeHelper.cmake")
 
 # ---------------------------------------------------
 # Install Open SSL

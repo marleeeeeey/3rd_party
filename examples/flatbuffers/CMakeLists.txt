@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(flatbuffers_minimalProject)
 
-include(${THIRD_PARTY_ROOT}/FlatbuffersHelper.cmake)
+include(${THIRD_PARTY_ROOT}/cmake/FlatbuffersHelper.cmake)
 
 # This creates a target 'monster_schema' that you can link to anywhere
 add_flatbuffers_schema(monster_schema

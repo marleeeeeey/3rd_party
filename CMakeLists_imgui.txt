@@ -30,7 +30,7 @@ target_link_libraries(imgui
         $<BUILD_INTERFACE:SDL3::SDL3> # Internal visible
 )
 
-include(${THIRD_PARTY_ROOT}/InstallHelper.cmake)
+include(${THIRD_PARTY_ROOT}/cmake/InstallHelper.cmake)
 setup_install_rules(
     TARGET imgui
     NAMESPACE imgui

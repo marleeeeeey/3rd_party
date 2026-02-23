@@ -131,7 +131,7 @@ if (WIN32)
     target_link_libraries(enet PUBLIC winmm ws2_32)
 endif()
 
-include(${THIRD_PARTY_ROOT}/InstallHelper.cmake)
+include(${THIRD_PARTY_ROOT}/cmake/InstallHelper.cmake)
 setup_install_rules(
     TARGET enet
     NAMESPACE enet

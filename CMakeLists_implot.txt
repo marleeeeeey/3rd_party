@@ -20,7 +20,7 @@ endif()
 
 target_link_libraries(implot PUBLIC imgui::imgui)
 
-include(${THIRD_PARTY_ROOT}/InstallHelper.cmake)
+include(${THIRD_PARTY_ROOT}/cmake/InstallHelper.cmake)
 setup_install_rules(
     TARGET implot
     NAMESPACE implot
